@@ -1,20 +1,20 @@
 {
   "personal": {
-    "fullName": "",
-    "firstName": "",
-    "lastName": "",
-    "email": "",
-    "phone": "",
+    "fullName": "Shivam Vishwakarma",
+    "firstName": "Shivam",
+    "lastName": "Vishwakarma",
+    "email": "svshivamshailendra@gmail.com",
+    "phone": "+91 84463 24793",
     "dateOfBirth": "",
     "gender": "Prefer not to say",
-    "currentCity": "",
+    "currentCity": "Pune",
     "state": "",
     "country": "India",
     "postalCode": "",
     "addressLine": "",
-    "linkedinUrl": "",
-    "githubUrl": "",
-    "portfolioUrl": ""
+    "linkedinUrl": "https://linkedin.com/in/shivamvishwakarma8",
+    "githubUrl": "https://github.com/shivam-vishwakarmaa",
+    "portfolioUrl": "https://shivam-pay.vercel.app"
   },
   "preferences": {
     "preferredRoles": [
@@ -33,18 +33,56 @@
     "currentSalary": ""
   },
   "resume": {
-    "fileName": "",
-    "filePath": "",
-    "rawText": "",
-    "summary": "",
-    "education": [],
+    "fileName": "resume_1792685015952_shviamResume_offcampus2.pdf",
+    "filePath": "C:\\Users\\Shivam\\Downloads\\temp web\\ai agent\\data\\resumes\\resume_1792687190308_resume_1792685015952_shviamResume_offcampus2.pdf",
+    "rawText": "Shivam Vishwakarma\nEmail: svshivamshailendra@gmail.com | Phone: +91 84463 24793 | LinkedIn: linkedin.com/in/shivamvishwakarma8\nGitHub: github.com/shivam-vishwakarmaa | LeetCode: leetcode.com/u/_shivamvishwa | Codeforces:\ncodeforces.com/profile/Shivam-Vishwakarma\nEducation\nVishwakarma Institute of Technology (VIT), Pune Pune, India\nBachelor of Technology in Information Technology; CGPA: 8.85/10 2024 – 2028 (Expected)\n– Relevant Coursework: Data Structures & Algorithms, Operating Systems, Computer Networks, DBMS, Distributed\nSystems Fundamentals, OOP.\nTechnical Skills\nLanguages: Go, Python,C, C++, Java, JavaScript, SQL\nBackend & AI: Go net/http, FastAPI, Node.js, Express.js, REST APIs, RAG, Ragas\nData & Infrastructure: Redis, PostgreSQL, MongoDB, MySQL, Vector Databases, Docker, GitHub Actions, Prometheus\nConcepts: Distributed Systems, Concurrency, Data Structures & Algorithms, OOP, DBMS, API Security\nProjects\nDistributed Rate Limiting Middleware github.com/shivam-vishwakarmaa/Distributed-Rate-Limiting-Middleware\nGo, Redis, Lua, Docker, Prometheus, k6, GitHub Actions\n– Atomic algorithms under concurrency: Built a Go reverse proxy implementing 4 rate-limiting algorithms (fixed window,\nsliding window log, token bucket, leaky bucket) as atomic Redis Lua scripts, removing read-modify-write races; 1,000\nconcurrent goroutines against a single key admit the exact configured limit, never more.\n– Throughput: Sustained 5,000+ req/s at p50 <1ms and p99 <2.6ms under k6 load, with a measured single-instance\nceiling near 10,000 req/s.\n– Failover: Added a per-algorithm circuit breaker with single-probe half-open recovery over a bounded in-memory fallback;\nkilled Redis mid-load-test and served 531k requests from the fallback with no incorrect denials.\n– Engineering: 94.8% test coverage across 151 unit and real-Redis integration tests, a 7-stage GitHub Actions pipeline, and a\nnon-root distroless image.\nProduction-Grade RAG System github.com/shivam-vishwakarmaa/Production-Grade-RAG-System\nPython, FastAPI, Ragas, Pytest, Docker Compose, GitHub Actions\n– Architecture: End-to-end retrieval-augmented generation service in FastAPI with 500-token semantic chunking, dense vector\nretrieval, and per-stage latency telemetry.\n– Evaluation: Scored 0.92 faithfulness, 0.89 context precision, 0.91 context recall on a 30-pair golden QA benchmark\nusing Ragas.\n– Regression gating: Wired a 3-tier pytest suite (unit, integration, semantic) into CI to block pull requests that degrade\nretrieval metrics by more than 5%.\nShivamPay – Digital Payment & Lending Platform github.com/shivam-vishwakarmaa/shivam-pay\nMongoDB, Express.js, React.js, Node.js, Razorpay API, JWT, Zod shivam-pay.vercel.app\n– Atomic ledger: Built a transaction engine on MongoDB multi-document ACID sessions; concurrent debit/credit tests\nshowed no double-spends under parallel load.\n– Lending module: Implemented compound-interest schedules and instant loan foreclosure, secured with PIN authorization\nand Zod validation across 15+ endpoints.\nAchievements\n• Competitive Programming: Solved 650+ DSA problems on LeetCode with a peak contest rating of 1766; ranked 1807\nof 45,000+ in Weekly Contest 518. Active on Codeforces.\n• GenAI Hackathon 2026: 2nd Runner-Up for NoteVault AI, an offline OCR and local-LLM study assistant.\nLeadership Experience\nGedIT Coding Club Pune, India\nDSA Coordinator\n– Mentorship: Mentored 60+ junior students in data structures, algorithms, structured problem-solving, and contest strategy.\n\n-- 1 of 1 --\n\n",
+    "summary": "Software Engineer candidate with skills in .",
+    "education": [
+      {
+        "institution": "Vishwakarma Institute of Technology (VIT), Pune Pune, India",
+        "degree": "Bachelor of Technology in Information Technology; CGPA: 8.85/10 2024 – 2028 (Expected)",
+        "fieldOfStudy": "Information Technology / Computer Science",
+        "endDate": "2028 (Expected)",
+        "gradeOrCgpa": "8.85/10"
+      }
+    ],
     "experience": [],
-    "projects": [],
+    "projects": [
+      {
+        "title": "Distributed Rate Limiting Middleware github.com/shivam-vishwakarmaa/Distributed-Rate-Limiting-Middleware",
+        "techStack": [
+          "Go",
+          "Python",
+          "Java"
+        ],
+        "description": "High-performance engineering project from candidate resume."
+      }
+    ],
     "skills": {
-      "languages": [],
-      "frameworks": [],
+      "languages": [
+        "Go",
+        "Python",
+        "Java",
+        "C",
+        "JavaScript",
+        "SQL"
+      ],
+      "frameworks": [
+        "React",
+        "Node.js",
+        "Express",
+        "Express.js",
+        "FastAPI"
+      ],
       "databases": [],
-      "tools": []
+      "tools": [
+        "Redis",
+        "PostgreSQL",
+        "MongoDB",
+        "MySQL",
+        "Docker",
+        "Prometheus"
+      ]
     },
     "certifications": []
   },
@@ -55,5 +93,5 @@
     "noticePeriodAnswer": "Available immediately as a fresher graduate.",
     "sponsorshipAnswer": "I am legally authorized to work and do not require visa sponsorship."
   },
-  "updatedAt": "2026-10-22T15:42:06.794Z"
+  "updatedAt": "2026-10-22T16:39:50.430Z"
 }

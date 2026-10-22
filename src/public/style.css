@@ -723,6 +723,36 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 1rem;
 }
 
+.file-status {
+  display: none;
+  margin-top: 1.2rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.status-loading {
+  display: inline-block;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #a5f3fc;
+}
+
+.status-success {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.status-error {
+  display: inline-block;
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+}
+
 .current-resume-info {
   margin-top: 1.5rem;
   padding: 1rem;

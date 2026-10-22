@@ -299,37 +299,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const educationContainer = document.getElementById('educationContainer');
   const projectsContainer = document.getElementById('projectsContainer');
 
-  resumeDropzone.addEventListener('click', () => resumeFileInput.click());
+  resumeDropzone.addEventListener('click', (e) => {
+    if (e.target !== resumeFileInput) {
+      resumeFileInput.click();
+    }
+  });
 
   resumeDropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     resumeDropzone.style.borderColor = 'var(--primary)';
+    resumeDropzone.style.background = 'rgba(139, 92, 246, 0.12)';
   });
 
-  resumeDropzone.addEventListener('dragleave', () => {
+  resumeDropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     resumeDropzone.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+    resumeDropzone.style.background = 'rgba(139, 92, 246, 0.04)';
   });
 
   resumeDropzone.addEventListener('drop', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     resumeDropzone.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-    if (e.dataTransfer.files.length > 0) {
+    resumeDropzone.style.background = 'rgba(139, 92, 246, 0.04)';
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleResumeUpload(e.dataTransfer.files[0]);
     }
   });
 
   resumeFileInput.addEventListener('change', () => {
-    if (resumeFileInput.files.length > 0) {
+    if (resumeFileInput.files && resumeFileInput.files.length > 0) {
       handleResumeUpload(resumeFileInput.files[0]);
     }
   });
 
   async function handleResumeUpload(file) {
-    if (!file.name.endsWith('.pdf')) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
       return alert('Please upload a PDF format resume');
     }
 
-    uploadStatusText.textContent = 'Parsing and extracting structured profile...';
+    uploadStatusText.className = 'file-status status-loading';
+    uploadStatusText.innerHTML = '⏳ <strong>Parsing resume...</strong> Extracting skills, education, and links.';
     const formData = new FormData();
     formData.append('resume', file);
 
@@ -341,12 +353,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-      uploadStatusText.textContent = '✅ Resume parsed successfully!';
+      uploadStatusText.className = 'file-status status-success';
+      uploadStatusText.innerHTML = `✅ <strong>Resume parsed successfully!</strong> (${file.name})`;
       currentResumeName.textContent = file.name;
       renderParsedProfile(data.profile);
-      loadProfile(); // refresh form
+      loadProfile(); // refresh all display cards and fallbacks
     } catch (err) {
-      uploadStatusText.textContent = `❌ ${err.message}`;
+      uploadStatusText.className = 'file-status status-error';
+      uploadStatusText.innerHTML = `❌ <strong>Upload error:</strong> ${escapeHtml(err.message)}`;
     }
   }
 
