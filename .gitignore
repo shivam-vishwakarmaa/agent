@@ -1,0 +1,10 @@
+node_modules/
+.env
+data/resumes/*
+!data/resumes/.gitkeep
+data/sessions/*
+!data/sessions/.gitkeep
+screenshots/
+logs/
+.DS_Store
+Thumbs.db

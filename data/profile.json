@@ -1,0 +1,59 @@
+{
+  "personal": {
+    "fullName": "",
+    "firstName": "",
+    "lastName": "",
+    "email": "",
+    "phone": "",
+    "dateOfBirth": "",
+    "gender": "Prefer not to say",
+    "currentCity": "",
+    "state": "",
+    "country": "India",
+    "postalCode": "",
+    "addressLine": "",
+    "linkedinUrl": "",
+    "githubUrl": "",
+    "portfolioUrl": ""
+  },
+  "preferences": {
+    "preferredRoles": [
+      "Software Engineer",
+      "Frontend Developer",
+      "Full Stack Developer"
+    ],
+    "experienceLevel": "Fresher (0-1 YOE)",
+    "targetRoleType": "Full-time",
+    "workAuthorization": "Authorized to work without sponsorship",
+    "requiresSponsorship": false,
+    "noticePeriodDays": 0,
+    "willingToRelocate": true,
+    "remotePreference": "Flexible",
+    "expectedSalary": "",
+    "currentSalary": ""
+  },
+  "resume": {
+    "fileName": "",
+    "filePath": "",
+    "rawText": "",
+    "summary": "",
+    "education": [],
+    "experience": [],
+    "projects": [],
+    "skills": {
+      "languages": [],
+      "frameworks": [],
+      "databases": [],
+      "tools": []
+    },
+    "certifications": []
+  },
+  "screenerDefaults": {
+    "whyHireMe": "",
+    "strengths": "",
+    "weaknesses": "",
+    "noticePeriodAnswer": "Available immediately as a fresher graduate.",
+    "sponsorshipAnswer": "I am legally authorized to work and do not require visa sponsorship."
+  },
+  "updatedAt": "2026-10-22T15:42:06.794Z"
+}
