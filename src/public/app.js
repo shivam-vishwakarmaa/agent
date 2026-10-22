@@ -1,7 +1,7 @@
 /**
  * NexusApply AI - Frontend Application Controller
- * Handles live execution tracking, verification review modals, resume uploads,
- * profile sync, and multi-API key pool management.
+ * Handles live execution tracking, verification review modals, multi-resume management,
+ * autonomous job discovery radar, and batch Gemini API key pool sync.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,8 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load Initial Data
   loadProfile();
+  loadResumes();
   loadApiKeys();
   startSessionPolling();
+  discoverCompanies(); // Load India hiring companies on startup!
 
   // ==================== 1. Target Application Console ====================
   const applyForm = document.getElementById('applyForm');
@@ -126,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionStatusBadge.textContent = session.status || 'IDLE';
     sessionStatusBadge.className = `badge ${getStatusBadgeClass(session.status)}`;
 
-    // Update progress bar
     const progressMap = {
       'IDLE': 0,
       'INITIALIZING': 15,
@@ -200,21 +201,111 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ==================== 2. Fresher Role Matcher ====================
+  // ==================== 2. Autonomous Job Discovery Radar ====================
+  const btnDiscoverIndiaCompanies = document.getElementById('btnDiscoverIndiaCompanies');
+  const radarRoleQuery = document.getElementById('radarRoleQuery');
+  const radarLocationQuery = document.getElementById('radarLocationQuery');
+  const discoveredCompaniesGrid = document.getElementById('discoveredCompaniesGrid');
   const matcherForm = document.getElementById('matcherForm');
   const matcherCareersUrl = document.getElementById('matcherCareersUrl');
   const matcherRoleQuery = document.getElementById('matcherRoleQuery');
   const searchRolesBtn = document.getElementById('searchRolesBtn');
   const rolesResults = document.getElementById('rolesResults');
 
-  matcherForm.addEventListener('submit', async (e) => {
+  btnDiscoverIndiaCompanies.addEventListener('click', () => {
+    discoverCompanies();
+  });
+
+  async function discoverCompanies() {
+    btnDiscoverIndiaCompanies.disabled = true;
+    btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Scanning Portals...</span>';
+    discoveredCompaniesGrid.innerHTML = '<div class="empty-state">Scanning active tech hiring portals in India...</div>';
+
+    const targetRole = radarRoleQuery.value.trim() || 'Software Engineer';
+    const location = radarLocationQuery.value.trim() || 'India';
+
+    try {
+      const res = await fetch('/api/jobs/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetRole, location })
+      });
+      const data = await res.json();
+      renderDiscoveredCompanies(data.companies || []);
+    } catch (err) {
+      discoveredCompaniesGrid.innerHTML = `<div class="empty-state" style="color:var(--rose)">Error: ${escapeHtml(err.message)}</div>`;
+    } finally {
+      btnDiscoverIndiaCompanies.disabled = false;
+      btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Auto-Scan Hiring Companies</span>';
+    }
+  }
+
+  function renderDiscoveredCompanies(companies) {
+    if (companies.length === 0) {
+      discoveredCompaniesGrid.innerHTML = '<div class="empty-state">No portals returned. Try adjusting role keywords.</div>';
+      return;
+    }
+
+    discoveredCompaniesGrid.innerHTML = companies.map(c => `
+      <div class="company-radar-card">
+        <div>
+          <div class="radar-card-header">
+            <h4 class="radar-company-name">${escapeHtml(c.company)}</h4>
+            <span class="badge badge-success">${escapeHtml(c.hiringStatus || 'Actively Hiring')}</span>
+          </div>
+          <div class="radar-role-title">💼 ${escapeHtml(c.typicalFresherRole || 'Software Engineer')}</div>
+          <div class="radar-meta">
+            📍 ${escapeHtml(c.locations || 'India')}<br>
+            🎓 ${escapeHtml(c.experienceRequired || 'Fresher / Entry-Level')}
+          </div>
+          <div class="tags-container" style="margin-bottom:0.8rem;">
+            ${(c.tags || []).map(t => `<span class="skill-tag">${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="radar-actions">
+          <button class="btn btn-secondary btn-crawl-portal" data-url="${escapeHtml(c.careersUrl)}" data-company="${escapeHtml(c.company)}">
+            🔍 Crawl Open Jobs
+          </button>
+          <button class="btn btn-primary btn-auto-apply" data-url="${escapeHtml(c.careersUrl)}" data-company="${escapeHtml(c.company)}" data-role="${escapeHtml(c.typicalFresherRole)}">
+            ⚡ Apply with Agent
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    // Attach actions
+    discoveredCompaniesGrid.querySelectorAll('.btn-crawl-portal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-url');
+        matcherCareersUrl.value = url;
+        crawlPortal(url, radarRoleQuery.value.trim());
+      });
+    });
+
+    discoveredCompaniesGrid.querySelectorAll('.btn-auto-apply').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('targetJobUrl').value = btn.getAttribute('data-url');
+        document.getElementById('targetCompanyName').value = btn.getAttribute('data-company');
+        document.getElementById('targetJobTitle').value = btn.getAttribute('data-role');
+        document.querySelector('[data-tab="tab-apply"]').click();
+      });
+    });
+  }
+
+  // Specific portal DOM crawler
+  matcherForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const careersUrl = matcherCareersUrl.value.trim();
     const rolePreference = matcherRoleQuery.value.trim();
+    crawlPortal(careersUrl, rolePreference);
+  });
+
+  async function crawlPortal(careersUrl, rolePreference) {
+    if (!careersUrl) return alert('Please enter or select a career portal URL');
 
     searchRolesBtn.disabled = true;
-    searchRolesBtn.innerHTML = '<span>Scanning Careers...</span>';
-    rolesResults.innerHTML = '<div class="empty-state">Agent is inspecting open roles on target company portal...</div>';
+    searchRolesBtn.innerHTML = '<span>Crawling DOM...</span>';
+    rolesResults.innerHTML = `<div class="empty-state">Agent browser is actively inspecting <strong>${escapeHtml(careersUrl)}</strong>...</div>`;
 
     try {
       const res = await fetch('/api/jobs/search-roles', {
@@ -230,13 +321,13 @@ document.addEventListener('DOMContentLoaded', () => {
       rolesResults.innerHTML = `<div class="empty-state" style="color:var(--rose)">Error: ${escapeHtml(err.message)}</div>`;
     } finally {
       searchRolesBtn.disabled = false;
-      searchRolesBtn.innerHTML = '<span>🔍 Scan Careers Page</span>';
+      searchRolesBtn.innerHTML = '<span>🔍 Crawl Portal DOM</span>';
     }
-  });
+  }
 
   function renderMatchedRoles(jobs) {
     if (jobs.length === 0) {
-      rolesResults.innerHTML = '<div class="empty-state">No matching roles found on this portal. Try a different URL or keyword.</div>';
+      rolesResults.innerHTML = '<div class="empty-state">No matching roles found on this portal. Try a different role query or company portal.</div>';
       return;
     }
 
@@ -268,18 +359,13 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
         <button class="btn btn-primary btn-apply-direct" data-url="${escapeHtml(job.url || '')}" data-title="${escapeHtml(job.title)}">
-          ⚡ Apply to this Role
+          ⚡ Auto-Apply with Agent
         </button>
       `;
 
       card.querySelector('.btn-apply-direct').addEventListener('click', () => {
-        if (job.url) {
-          document.getElementById('targetJobUrl').value = job.url;
-        } else {
-          document.getElementById('targetJobUrl').value = matcherCareersUrl.value.trim();
-        }
+        document.getElementById('targetJobUrl').value = job.url || matcherCareersUrl.value.trim();
         document.getElementById('targetJobTitle').value = job.title;
-        // Switch to apply tab
         document.querySelector('[data-tab="tab-apply"]').click();
       });
 
@@ -290,11 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
     rolesResults.appendChild(container);
   }
 
-  // ==================== 3. Resume Upload & Knowledge ====================
+  // ==================== 3. Multi-Resume Manager ====================
   const resumeDropzone = document.getElementById('resumeDropzone');
   const resumeFileInput = document.getElementById('resumeFileInput');
   const uploadStatusText = document.getElementById('uploadStatusText');
-  const currentResumeName = document.getElementById('currentResumeName');
+  const resumesListContainer = document.getElementById('resumesListContainer');
   const skillsContainer = document.getElementById('skillsContainer');
   const educationContainer = document.getElementById('educationContainer');
   const projectsContainer = document.getElementById('projectsContainer');
@@ -353,20 +439,81 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-      uploadStatusText.className = 'file-status status-success';
-      uploadStatusText.innerHTML = `✅ <strong>Resume parsed successfully!</strong> (${file.name})`;
-      currentResumeName.textContent = file.name;
-      renderParsedProfile(data.profile);
-      loadProfile(); // refresh all display cards and fallbacks
+      if (data.isDuplicate) {
+        uploadStatusText.className = 'file-status status-loading';
+        uploadStatusText.innerHTML = `ℹ️ <strong>Already Uploaded:</strong> "${file.name}" is already saved. Switched to active.`;
+      } else {
+        uploadStatusText.className = 'file-status status-success';
+        uploadStatusText.innerHTML = `✅ <strong>Resume parsed & saved:</strong> "${file.name}"`;
+      }
+
+      loadResumes();
+      loadProfile();
     } catch (err) {
       uploadStatusText.className = 'file-status status-error';
       uploadStatusText.innerHTML = `❌ <strong>Upload error:</strong> ${escapeHtml(err.message)}`;
     }
   }
 
+  async function loadResumes() {
+    try {
+      const res = await fetch('/api/resumes');
+      const data = await res.json();
+      renderResumesList(data.resumes || [], data.activeResumeId);
+    } catch (e) {}
+  }
+
+  function renderResumesList(resumes, activeId) {
+    if (!resumesListContainer) return;
+    if (resumes.length === 0) {
+      resumesListContainer.innerHTML = '<div class="empty-state" style="padding:1rem;">No resumes uploaded yet. Drop a PDF above.</div>';
+      return;
+    }
+
+    resumesListContainer.innerHTML = resumes.map(r => {
+      const isActive = r.id === activeId || r.isActive;
+      return `
+        <div class="resume-item-card ${isActive ? 'is-active' : ''}">
+          <div>
+            <div class="resume-item-name">
+              <span>📄 ${escapeHtml(r.originalName || r.fileName)}</span>
+              ${isActive ? '<span class="badge badge-success" style="font-size:0.7rem;">✓ Active Resume</span>' : ''}
+            </div>
+            <div class="resume-item-meta">
+              Skills: ${(r.skills?.languages || []).slice(0, 4).join(', ') || 'Parsed'} • Uploaded: ${new Date(r.uploadedAt).toLocaleDateString()}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            ${!isActive ? `<button class="btn-secondary" onclick="activateResume('${r.id}')" style="padding:0.4rem 0.8rem; font-size:0.78rem;">Use This Resume</button>` : ''}
+            <button class="btn-danger" onclick="deleteResume('${r.id}')" title="Delete Resume">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.activateResume = async (id) => {
+    try {
+      const res = await fetch(`/api/resumes/${id}/activate`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        loadResumes();
+        loadProfile();
+      }
+    } catch (e) {}
+  };
+
+  window.deleteResume = async (id) => {
+    if (!confirm('Are you sure you want to delete this resume?')) return;
+    try {
+      await fetch(`/api/resumes/${id}`, { method: 'DELETE' });
+      loadResumes();
+      loadProfile();
+    } catch (e) {}
+  };
+
   function renderParsedProfile(profile) {
     const resume = profile.resume || {};
-    currentResumeName.textContent = resume.fileName || 'Uploaded Resume';
 
     // Skills
     const skills = resume.skills || {};
@@ -417,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = profile.personal || {};
       const prefs = profile.preferences || {};
 
-      // 1. Update Auto-Extracted Resume Pills
       const setPill = (id, val) => {
         const el = document.getElementById(id);
         if (el) {
@@ -438,7 +584,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setPill('displayGithub', p.githubUrl);
       setPill('displayPortfolio', p.portfolioUrl);
 
-      // 2. Populate form inputs (for fallbacks and optional override)
       if (document.getElementById('fullName')) document.getElementById('fullName').value = p.fullName || '';
       if (document.getElementById('email')) document.getElementById('email').value = p.email || '';
       if (document.getElementById('phone')) document.getElementById('phone').value = p.phone || '';
@@ -464,9 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quickRole.textContent = prefs.experienceLevel;
       }
 
-      if (profile.resume?.fileName) {
-        renderParsedProfile(profile);
-      }
+      renderParsedProfile(profile);
     } catch (err) {}
   }
 
@@ -517,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ==================== 5. Multi-API Key Failover Pool ====================
+  // ==================== 5. Multi-API Key Failover Pool (Batch Support) ====================
   const addApiKeyForm = document.getElementById('addApiKeyForm');
   const newApiKeyInput = document.getElementById('newApiKeyInput');
   const apiKeysList = document.getElementById('apiKeysList');
@@ -539,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dot.className = `status-dot ${hasActive ? 'dot-active' : 'dot-warn'}`;
 
     if (keys.length === 0) {
-      apiKeysList.innerHTML = '<div class="empty-state">No Gemini API keys in pool. Add at least one key below to enable AI question answering.</div>';
+      apiKeysList.innerHTML = '<div class="empty-state">No Gemini API keys in pool. Paste 1 or more keys above to enable AI question answering.</div>';
       return;
     }
 
@@ -577,22 +720,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addApiKeyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const key = newApiKeyInput.value.trim();
-    if (!key) return;
+    const rawKeys = newApiKeyInput.value.trim();
+    if (!rawKeys) return;
 
     try {
       const res = await fetch('/api/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key })
+        body: JSON.stringify({ keys: rawKeys })
       });
       const data = await res.json();
       if (data.success) {
         newApiKeyInput.value = '';
+        alert(`Successfully added ${data.countAdded || 1} API key(s) to the pool!`);
         renderApiKeys(data.keys);
       }
     } catch (err) {
-      alert('Failed to add key: ' + err.message);
+      alert('Failed to add keys: ' + err.message);
     }
   });
 

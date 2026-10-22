@@ -14,6 +14,7 @@ const { sessionStore } = require('./state/sessionStore');
 const { resumeParser } = require('./parsers/resumeParser');
 const { applicationOrchestrator } = require('./automation/applicationOrchestrator');
 const { jobMatcher } = require('./ai/jobMatcher');
+const { jobFinder } = require('./ai/jobFinder');
 const { browserController } = require('./automation/browser');
 
 const app = express();
@@ -34,7 +35,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ==================== Profile Endpoints ====================
+// ==================== Profile & Multi-Resume Endpoints ====================
 
 app.get('/api/profile', (req, res) => {
   res.json(sessionStore.getProfile());
@@ -43,6 +44,25 @@ app.get('/api/profile', (req, res) => {
 app.post('/api/profile', (req, res) => {
   const updated = sessionStore.saveProfile(req.body);
   res.json({ success: true, profile: updated });
+});
+
+app.get('/api/resumes', (req, res) => {
+  const profile = sessionStore.getProfile();
+  res.json({
+    resumes: profile.resumes || [],
+    activeResumeId: profile.activeResumeId
+  });
+});
+
+app.post('/api/resumes/:id/activate', (req, res) => {
+  const updated = sessionStore.setActiveResume(req.params.id);
+  if (!updated) return res.status(404).json({ error: 'Resume not found' });
+  res.json({ success: true, activeResume: updated, profile: sessionStore.getProfile() });
+});
+
+app.delete('/api/resumes/:id', (req, res) => {
+  const success = sessionStore.deleteResume(req.params.id);
+  res.json({ success, profile: sessionStore.getProfile() });
 });
 
 app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
@@ -54,35 +74,45 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
     const filePath = req.file.path;
     const parsed = await resumeParser.parsePdf(filePath);
 
+    // Add resume to multi-resume store with duplicate check
+    const addResult = sessionStore.addResume({
+      originalName: req.file.originalname,
+      fileName: req.file.filename,
+      filePath,
+      rawText: parsed.rawText,
+      summary: parsed.summary,
+      education: parsed.education,
+      experience: parsed.experience,
+      projects: parsed.projects,
+      skills: parsed.skills,
+      certifications: parsed.certifications
+    });
+
+    // Also update personal contact data in profile
     const currentProfile = sessionStore.getProfile();
-    const updatedProfile = {
-      ...currentProfile,
-      personal: {
-        ...currentProfile.personal,
-        fullName: parsed.personal?.fullName || currentProfile.personal.fullName,
-        firstName: parsed.personal?.firstName || currentProfile.personal.firstName,
-        lastName: parsed.personal?.lastName || currentProfile.personal.lastName,
-        email: parsed.personal?.email || currentProfile.personal.email,
-        phone: parsed.personal?.phone || currentProfile.personal.phone,
-        linkedinUrl: parsed.personal?.linkedinUrl || currentProfile.personal.linkedinUrl,
-        githubUrl: parsed.personal?.githubUrl || currentProfile.personal.githubUrl,
-        portfolioUrl: parsed.personal?.portfolioUrl || currentProfile.personal.portfolioUrl
-      },
-      resume: {
-        fileName: req.file.originalname,
-        filePath,
-        rawText: parsed.rawText,
-        summary: parsed.summary,
-        education: parsed.education,
-        experience: parsed.experience,
-        projects: parsed.projects,
-        skills: parsed.skills,
-        certifications: parsed.certifications
-      }
+    const updatedPersonal = {
+      ...currentProfile.personal,
+      fullName: parsed.personal?.fullName || currentProfile.personal.fullName,
+      firstName: parsed.personal?.firstName || currentProfile.personal.firstName,
+      lastName: parsed.personal?.lastName || currentProfile.personal.lastName,
+      email: parsed.personal?.email || currentProfile.personal.email,
+      phone: parsed.personal?.phone || currentProfile.personal.phone,
+      linkedinUrl: parsed.personal?.linkedinUrl || currentProfile.personal.linkedinUrl,
+      githubUrl: parsed.personal?.githubUrl || currentProfile.personal.githubUrl,
+      portfolioUrl: parsed.personal?.portfolioUrl || currentProfile.personal.portfolioUrl,
+      currentCity: parsed.personal?.currentCity || currentProfile.personal.currentCity
     };
 
-    sessionStore.saveProfile(updatedProfile);
-    res.json({ success: true, profile: updatedProfile });
+    sessionStore.saveProfile({ personal: updatedPersonal });
+
+    res.json({
+      success: true,
+      isDuplicate: addResult.isDuplicate,
+      message: addResult.isDuplicate 
+        ? `"${req.file.originalname}" was already uploaded. Set as current active resume.` 
+        : `"${req.file.originalname}" uploaded and parsed successfully.`,
+      profile: sessionStore.getProfile()
+    });
   } catch (err) {
     console.error('[Server] Resume parse error:', err);
     res.status(500).json({ error: err.message });
@@ -99,10 +129,13 @@ app.get('/api/keys', (req, res) => {
 });
 
 app.post('/api/keys', (req, res) => {
-  const { key } = req.body;
-  if (!key) return res.status(400).json({ error: 'API key is required' });
-  apiPool.addKey(key);
-  res.json({ success: true, keys: apiPool.getStatus() });
+  const { key, keys } = req.body;
+  const input = keys || key;
+  if (!input) return res.status(400).json({ error: 'At least one API key is required' });
+
+  // Supports single key or batch pasting
+  const added = apiPool.addBatchKeys(input);
+  res.json({ success: true, countAdded: added.length, keys: apiPool.getStatus() });
 });
 
 app.delete('/api/keys/:id', (req, res) => {
@@ -139,8 +172,32 @@ app.post('/api/session/approve', (req, res) => {
   res.json({ success: approved, message: approved ? 'Approved for final submission' : 'No pending review found' });
 });
 
-// ==================== Role Discovery Endpoint ====================
+// ==================== Autonomous Role Discovery Endpoints ====================
 
+/**
+ * Autonomous Job Radar: Discovers top recruiting companies in India for candidate role
+ */
+app.post('/api/jobs/discover', async (req, res) => {
+  const { targetRole, location } = req.body;
+  const profile = sessionStore.getProfile();
+  const role = targetRole || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
+  const loc = location || profile.personal?.currentCity || 'India';
+  const skills = [
+    ...(profile.resume?.skills?.languages || []),
+    ...(profile.resume?.skills?.tools || [])
+  ];
+
+  try {
+    const companies = await jobFinder.discoverHiringPortals(role, loc, skills);
+    res.json({ success: true, companies });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Deep scan of a specific company career portal URL
+ */
 app.post('/api/jobs/search-roles', async (req, res) => {
   const { careersUrl, rolePreference } = req.body;
   if (!careersUrl) return res.status(400).json({ error: 'Careers URL is required' });

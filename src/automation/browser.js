@@ -78,7 +78,7 @@ class BrowserController {
       await this.page.goto(url, { waitUntil: 'domcontentloaded' });
       // Allow dynamic single page applications (React/Vue/Workday) to render
       await this.page.waitForTimeout(3000);
-      return true;
+      return this.page;
     } catch (err) {
       console.error(`[Browser] Navigation error: ${err.message}`);
       throw err;
@@ -141,66 +141,79 @@ class BrowserController {
       // Priority 1: Elements with job link patterns
       const jobLinkPatterns = [
         '/job/', '/jobs/', '/position/', '/positions/', '/opening/', '/openings/',
-        '/careers/', 'gh_jid=', 'lever.co/', 'greenhouse.io/', 'myworkdayjobs.com/',
-        'ashbyhq.com/', 'smartrecruiters.com/'
+        '/careers/jobdetails', 'jobdetails?id=', 'gh_jid=', 'lever.co/', 'greenhouse.io/',
+        'myworkdayjobs.com/', 'ashbyhq.com/', 'smartrecruiters.com/'
+      ];
+
+      const blacklistTitles = [
+        'careers home', 'privacy statement', 'privacy policy', 'cookie settings',
+        'terms of use', 'site map', 'accessibility', 'contact us', 'learn more',
+        'apply now', 'view details', 'search jobs', 'read more', 'click here',
+        'about us', 'about accenture', 'life at accenture', 'join us', 'view job',
+        'see more', 'back to search', 'job alerts'
       ];
 
       const allLinks = Array.from(document.querySelectorAll('a[href]'));
 
       for (const a of allLinks) {
         const href = a.href;
-        const text = (a.innerText || a.textContent || '').trim().replace(/\s+/g, ' ');
-
-        // Skip empty, short, or obvious navigation links
-        if (!text || text.length < 3 || text.length > 120) continue;
+        if (!href || href.startsWith('javascript:') || href.includes('#')) continue;
         if (seenUrls.has(href)) continue;
 
         const isJobUrl = jobLinkPatterns.some(pat => href.toLowerCase().includes(pat));
-        const isJobClass = (a.className || '').toLowerCase().includes('job') || 
-                           (a.getAttribute('data-automation-id') || '').toLowerCase().includes('job') ||
-                           (a.getAttribute('data-qa') || '').toLowerCase().includes('job');
+        const isJobAttr = (a.getAttribute('data-qa') || '').toLowerCase().includes('job') ||
+                          (a.getAttribute('data-automation-id') || '').toLowerCase().includes('job') ||
+                          (a.className || '').toLowerCase().includes('job-link');
 
-        if (isJobUrl || isJobClass) {
-          // Find closest container for location or department
-          const container = a.closest('li, tr, [class*="card"], [class*="item"], [class*="row"]') || a;
+        if (isJobUrl || isJobAttr) {
+          const container = a.closest('article, li, tr, [class*="card"], [class*="item"], [class*="listing"], [class*="row"]') || a;
+
+          // Find specific heading or title element inside container
+          const headingEl = container.querySelector('h1, h2, h3, h4, [class*="title" i], [class*="role" i], [class*="jobName" i], [data-qa*="title" i]');
+          let rawTitle = headingEl ? headingEl.innerText : a.innerText;
+          const cleanTitle = (rawTitle || '').replace(/\s+/g, ' ').trim();
+
+          if (!cleanTitle || cleanTitle.length < 4 || cleanTitle.length > 130) continue;
+          if (blacklistTitles.some(bl => cleanTitle.toLowerCase() === bl || cleanTitle.toLowerCase().includes('cookie') || cleanTitle.toLowerCase().includes('privacy'))) continue;
+
+          // Find location
           let location = '';
-          const locEl = container.querySelector('[class*="location"], [class*="Location"], [data-automation-id*="location"]');
-          if (locEl) {
-            location = locEl.innerText.trim();
-          }
+          const locEl = container.querySelector('[class*="location" i], [class*="city" i], [data-automation-id*="location" i]');
+          if (locEl) location = locEl.innerText.trim();
 
           seenUrls.add(href);
           results.push({
-            title: text,
+            title: cleanTitle,
             url: href,
-            location: location || '',
-            snippet: container.innerText.substring(0, 300).replace(/\s+/g, ' ').trim()
+            location: location || 'Location Specified on Portal',
+            snippet: container.innerText.substring(0, 350).replace(/\s+/g, ' ').trim()
           });
         }
       }
 
-      // Priority 2: Standard job listing table or cards if no direct job links found
+      // Priority 2: Structured job cards if links didn't match
       if (results.length === 0) {
-        const jobCards = Array.from(document.querySelectorAll('[data-qa="job"], [data-automation-id*="job"], [class*="job-listing"], [class*="job-tile"], [class*="career-item"], .opening'));
+        const jobCards = Array.from(document.querySelectorAll('[data-qa="job"], [data-automation-id*="job"], [class*="job-listing"], [class*="job-card"], [class*="career-item"], .rad-card, article'));
         for (const card of jobCards) {
-          const titleEl = card.querySelector('h1, h2, h3, h4, a, [class*="title"]') || card;
+          const titleEl = card.querySelector('h1, h2, h3, h4, [class*="title" i]') || card;
           const linkEl = card.querySelector('a[href]') || (card.tagName.toLowerCase() === 'a' ? card : null);
-          const title = titleEl.innerText.trim().replace(/\s+/g, ' ');
+          const rawTitle = titleEl.innerText.trim().replace(/\s+/g, ' ');
           const href = linkEl ? linkEl.href : window.location.href;
 
-          if (title && !seenUrls.has(href)) {
+          if (rawTitle && rawTitle.length >= 4 && !seenUrls.has(href)) {
+            if (blacklistTitles.some(bl => rawTitle.toLowerCase().includes(bl))) continue;
             seenUrls.add(href);
             results.push({
-              title,
+              title: rawTitle,
               url: href,
-              location: card.querySelector('[class*="location"]')?.innerText.trim() || '',
-              snippet: card.innerText.substring(0, 300).replace(/\s+/g, ' ').trim()
+              location: card.querySelector('[class*="location" i]')?.innerText.trim() || 'India / Multi-Location',
+              snippet: card.innerText.substring(0, 350).replace(/\s+/g, ' ').trim()
             });
           }
         }
       }
 
-      return results.slice(0, 25);
+      return results.slice(0, 30);
     });
 
     console.log(`[Browser] Extracted ${extractedJobs.length} real job openings from DOM.`);

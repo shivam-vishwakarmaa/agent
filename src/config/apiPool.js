@@ -1,11 +1,16 @@
 /**
  * Multi-API Key Failover Pool & Rate-Limit Manager
- * Automatically handles multiple Google Gemini API keys.
+ * Supports single and BATCH key input (paste multiple keys together).
+ * Automatically persists keys to data/keys.json so you never lose them on restart.
  * If Key 1 hits a 429 (Resource Exhausted / Rate Limit), it marks Key 1 on a cooldown
  * and immediately fails over to Key 2 with zero lost context and zero downtime.
  */
 
 const { GoogleGenAI } = require('@google/genai');
+const fs = require('fs');
+const path = require('path');
+
+const KEYS_FILE = path.join(__dirname, '../../data/keys.json');
 
 class ApiKeyPool {
   constructor(initialKeys = []) {
@@ -13,42 +18,99 @@ class ApiKeyPool {
     this.defaultModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     this.currentIndex = 0;
     
+    // Load persisted keys from data/keys.json
+    const persistedKeys = this.loadPersistedKeys();
+
     // Load from environment if available
     const envKeys = (process.env.GEMINI_API_KEYS || '')
-      .split(',')
+      .split(/[\n,;]+/)
       .map(k => k.trim())
       .filter(Boolean);
 
-    const allKeys = [...new Set([...envKeys, ...initialKeys])];
-    allKeys.forEach(key => this.addKey(key));
+    const allKeys = [...new Set([...persistedKeys, ...envKeys, ...initialKeys])];
+    allKeys.forEach(key => this.addKey(key, false));
   }
 
-  addKey(key) {
-    if (!key || typeof key !== 'string') return;
-    const cleanKey = key.trim();
-    if (this.keys.some(k => k.key === cleanKey)) return;
+  loadPersistedKeys() {
+    try {
+      if (fs.existsSync(KEYS_FILE)) {
+        const raw = fs.readFileSync(KEYS_FILE, 'utf-8');
+        return JSON.parse(raw);
+      }
+    } catch (e) {}
+    return [];
+  }
 
-    this.keys.push({
+  savePersistedKeys() {
+    try {
+      const dataDir = path.dirname(KEYS_FILE);
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      const activeRawKeys = this.keys.map(k => k.key);
+      fs.writeFileSync(KEYS_FILE, JSON.stringify(activeRawKeys, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('[ApiKeyPool] Failed to persist keys:', e.message);
+    }
+  }
+
+  /**
+   * Add a single key
+   */
+  addKey(key, persist = true) {
+    if (!key || typeof key !== 'string') return null;
+    const cleanKey = key.trim();
+    if (cleanKey.length < 10) return null;
+    if (this.keys.some(k => k.key === cleanKey)) return null;
+
+    const newKeyObj = {
       id: `key_${this.keys.length + 1}`,
       key: cleanKey,
       masked: `${cleanKey.substring(0, 6)}...${cleanKey.slice(-4)}`,
-      status: 'active', // 'active' | 'cooldown' | 'error'
+      status: 'active',
       cooldownUntil: 0,
       successCount: 0,
       failCount: 0,
       lastError: null,
       lastUsedAt: 0
+    };
+
+    this.keys.push(newKeyObj);
+    if (persist) this.savePersistedKeys();
+    return newKeyObj;
+  }
+
+  /**
+   * Add multiple keys at once (accepts comma, newline, or array)
+   */
+  addBatchKeys(input) {
+    if (!input) return [];
+    let keysToAdd = [];
+    if (Array.isArray(input)) {
+      keysToAdd = input;
+    } else if (typeof input === 'string') {
+      // Split by commas, newlines, semicolons, or spaces
+      keysToAdd = input.split(/[\n,;\s]+/).map(k => k.trim()).filter(Boolean);
+    }
+
+    const added = [];
+    keysToAdd.forEach(k => {
+      const res = this.addKey(k, false);
+      if (res) added.push(res);
     });
+
+    if (added.length > 0) {
+      this.savePersistedKeys();
+    }
+    return added;
   }
 
   removeKey(keyOrId) {
     this.keys = this.keys.filter(k => k.key !== keyOrId && k.id !== keyOrId);
+    this.savePersistedKeys();
   }
 
   getStatus() {
     const now = Date.now();
     return this.keys.map(k => {
-      // Check if cooldown has expired
       const isCooldown = k.status === 'cooldown' && k.cooldownUntil > now;
       const currentStatus = isCooldown ? 'cooldown' : (k.status === 'cooldown' ? 'active' : k.status);
       return {
@@ -67,19 +129,17 @@ class ApiKeyPool {
     const now = Date.now();
     const activeKeys = this.keys.filter(k => {
       if (k.status === 'cooldown' && k.cooldownUntil <= now) {
-        k.status = 'active'; // Cooldown finished
+        k.status = 'active';
         k.lastError = null;
       }
       return k.status === 'active';
     });
 
     if (activeKeys.length === 0) {
-      // If all keys are in cooldown, find the one that expires the soonest
       const soonest = [...this.keys].sort((a, b) => a.cooldownUntil - b.cooldownUntil)[0];
       return soonest || null;
     }
 
-    // Round-robin selection among active keys
     this.currentIndex = (this.currentIndex + 1) % activeKeys.length;
     return activeKeys[this.currentIndex];
   }
@@ -156,12 +216,11 @@ class ApiKeyPool {
         if (isRateLimit) {
           console.warn(`[API Pool] Rate limit (429) hit on ${keyObj.id}. Putting on 60s cooldown and rotating to next key...`);
           keyObj.status = 'cooldown';
-          keyObj.cooldownUntil = Date.now() + 60 * 1000; // 60s cooldown
+          keyObj.cooldownUntil = Date.now() + 60 * 1000;
         } else if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('403') || errMsg.includes('key not valid')) {
           console.error(`[API Pool] Invalid API key on ${keyObj.id}. Marking as error.`);
           keyObj.status = 'error';
         } else {
-          // Other transient error, brief 10s cooldown
           console.warn(`[API Pool] Error on ${keyObj.id}: ${errMsg}. Retrying with next key...`);
           keyObj.status = 'cooldown';
           keyObj.cooldownUntil = Date.now() + 10 * 1000;
@@ -173,7 +232,5 @@ class ApiKeyPool {
   }
 }
 
-// Singleton instance
 const apiPool = new ApiKeyPool();
-
 module.exports = { apiPool, ApiKeyPool };

@@ -1,6 +1,6 @@
 /**
  * Decoupled State & Context Engine
- * Stores the user profile, application session state, and screener question history.
+ * Stores the user profile, multiple resumes, application session state, and screener question history.
  * Ensures 100% context continuity across multi-step forms and API key failovers.
  */
 
@@ -31,7 +31,18 @@ class SessionStore {
     try {
       if (fs.existsSync(PROFILE_FILE)) {
         const raw = fs.readFileSync(PROFILE_FILE, 'utf-8');
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (!parsed.resumes) parsed.resumes = [];
+        if (parsed.resume && parsed.resume.fileName && !parsed.resumes.some(r => r.fileName === parsed.resume.fileName)) {
+          parsed.resumes.push({
+            id: `res_${Date.now()}`,
+            ...parsed.resume,
+            uploadedAt: new Date().toISOString(),
+            isActive: true
+          });
+          parsed.activeResumeId = parsed.resumes[0].id;
+        }
+        return parsed;
       }
     } catch (err) {
       console.error('[SessionStore] Error reading profile.json:', err.message);
@@ -59,15 +70,17 @@ class SessionStore {
       preferences: {
         preferredRoles: ['Software Engineer', 'Frontend Developer', 'Full Stack Developer'],
         experienceLevel: 'Fresher (0-1 YOE)',
-        targetRoleType: 'Full-time', // Full-time, Internship, Contract
+        targetRoleType: 'Full-time',
         workAuthorization: 'Authorized to work without sponsorship',
         requiresSponsorship: false,
-        noticePeriodDays: 0, // 0 = Immediate joiner
+        noticePeriodDays: 0,
         willingToRelocate: true,
-        remotePreference: 'Flexible', // Remote, Hybrid, Onsite, Flexible
+        remotePreference: 'Flexible',
         expectedSalary: '',
         currentSalary: ''
       },
+      resumes: [],
+      activeResumeId: null,
       resume: {
         fileName: '',
         filePath: '',
@@ -76,12 +89,7 @@ class SessionStore {
         education: [],
         experience: [],
         projects: [],
-        skills: {
-          languages: [],
-          frameworks: [],
-          databases: [],
-          tools: []
-        },
+        skills: { languages: [], frameworks: [], databases: [], tools: [] },
         certifications: []
       },
       screenerDefaults: {
@@ -106,6 +114,88 @@ class SessionStore {
 
   getProfile() {
     return this.profile;
+  }
+
+  /**
+   * Multi-Resume Management
+   */
+  addResume(resumeData) {
+    if (!this.profile.resumes) this.profile.resumes = [];
+
+    // Check duplicate by original name or file path
+    const isDuplicate = this.profile.resumes.find(r => 
+      r.originalName === resumeData.originalName ||
+      (r.rawText && resumeData.rawText && r.rawText.trim() === resumeData.rawText.trim())
+    );
+
+    if (isDuplicate) {
+      // Set existing as active
+      this.setActiveResume(isDuplicate.id);
+      return { isDuplicate: true, resume: isDuplicate };
+    }
+
+    const newResume = {
+      id: `resume_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      originalName: resumeData.originalName || resumeData.fileName,
+      fileName: resumeData.fileName,
+      filePath: resumeData.filePath,
+      rawText: resumeData.rawText,
+      summary: resumeData.summary,
+      education: resumeData.education || [],
+      experience: resumeData.experience || [],
+      projects: resumeData.projects || [],
+      skills: resumeData.skills || { languages: [], frameworks: [], databases: [], tools: [] },
+      certifications: resumeData.certifications || [],
+      uploadedAt: new Date().toISOString(),
+      isActive: true
+    };
+
+    // Deactivate previous active resumes
+    this.profile.resumes.forEach(r => r.isActive = false);
+    this.profile.resumes.push(newResume);
+    this.profile.activeResumeId = newResume.id;
+    this.profile.resume = newResume;
+
+    this.saveProfile(this.profile);
+    return { isDuplicate: false, resume: newResume };
+  }
+
+  setActiveResume(resumeId) {
+    if (!this.profile.resumes) return null;
+    const target = this.profile.resumes.find(r => r.id === resumeId);
+    if (!target) return null;
+
+    this.profile.resumes.forEach(r => r.isActive = (r.id === resumeId));
+    this.profile.activeResumeId = resumeId;
+    this.profile.resume = target;
+
+    this.saveProfile(this.profile);
+    return target;
+  }
+
+  deleteResume(resumeId) {
+    if (!this.profile.resumes) return false;
+    const idx = this.profile.resumes.findIndex(r => r.id === resumeId);
+    if (idx === -1) return false;
+
+    const removed = this.profile.resumes.splice(idx, 1)[0];
+    if (removed && removed.filePath && fs.existsSync(removed.filePath)) {
+      try { fs.unlinkSync(removed.filePath); } catch (e) {}
+    }
+
+    if (this.profile.activeResumeId === resumeId) {
+      if (this.profile.resumes.length > 0) {
+        this.profile.resumes[0].isActive = true;
+        this.profile.activeResumeId = this.profile.resumes[0].id;
+        this.profile.resume = this.profile.resumes[0];
+      } else {
+        this.profile.activeResumeId = null;
+        this.profile.resume = {};
+      }
+    }
+
+    this.saveProfile(this.profile);
+    return true;
   }
 
   /**
@@ -151,11 +241,11 @@ class SessionStore {
       companyName: companyName || 'Target Company',
       jobTitle: jobTitle || 'Target Role',
       jobUrl,
-      mode, // 'review' (ask confirmation before submit) or 'auto' (direct submit)
+      mode,
       atsType: 'detecting',
       currentStep: 1,
       totalStepsEstimated: 1,
-      status: 'INITIALIZING', // INITIALIZING | NAVIGATING | EXTRACTING_FIELDS | FILLING | WAITING_FOR_REVIEW | SUBMITTING | COMPLETED | FAILED
+      status: 'INITIALIZING',
       fieldsFilled: [],
       screenerAnswers: {},
       reviewData: null,
@@ -189,7 +279,7 @@ class SessionStore {
     if (!this.activeSession) return;
     const logEntry = {
       timestamp: new Date().toLocaleTimeString(),
-      type, // 'info' | 'success' | 'warn' | 'error' | 'agent'
+      type,
       message
     };
     this.activeSession.logs.push(logEntry);
@@ -205,7 +295,5 @@ class SessionStore {
   }
 }
 
-// Singleton
 const sessionStore = new SessionStore();
-
 module.exports = { sessionStore, SessionStore };

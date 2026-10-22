@@ -32,10 +32,12 @@ class ApplicationOrchestrator {
     try {
       // 1. Navigate to URL
       const page = await browserController.navigateTo(jobUrl);
-      sessionStore.addSessionLog(`Successfully navigated to job page: ${page.url()}`, 'success');
+      const currentUrl = (page && typeof page.url === 'function') ? page.url() : jobUrl;
+      sessionStore.addSessionLog(`Successfully navigated to job page: ${currentUrl}`, 'success');
 
       // 2. Detect ATS platform
-      const ats = detectAts(page.url(), await page.title());
+      const pageTitle = (page && typeof page.title === 'function') ? await page.title() : '';
+      const ats = detectAts(currentUrl, pageTitle);
       sessionStore.updateSession({ atsType: ats.name });
       sessionStore.addSessionLog(`Detected Platform: ${ats.name}`, 'info');
 

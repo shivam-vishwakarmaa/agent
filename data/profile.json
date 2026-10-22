@@ -1,36 +1,26 @@
 {
   "personal": {
     "fullName": "Shivam Vishwakarma",
-    "firstName": "Shivam",
-    "lastName": "Vishwakarma",
     "email": "svshivamshailendra@gmail.com",
     "phone": "+91 84463 24793",
-    "dateOfBirth": "",
-    "gender": "Prefer not to say",
+    "dateOfBirth": "2005-11-08",
+    "gender": "Male",
     "currentCity": "Pune",
-    "state": "",
-    "country": "India",
-    "postalCode": "",
-    "addressLine": "",
     "linkedinUrl": "https://linkedin.com/in/shivamvishwakarma8",
     "githubUrl": "https://github.com/shivam-vishwakarmaa",
     "portfolioUrl": "https://shivam-pay.vercel.app"
   },
   "preferences": {
+    "experienceLevel": "Fresher (0-1 YOE)",
+    "noticePeriodDays": 0,
+    "requiresSponsorship": false,
+    "willingToRelocate": true,
+    "remotePreference": "Flexible",
     "preferredRoles": [
       "Software Engineer",
       "Frontend Developer",
       "Full Stack Developer"
-    ],
-    "experienceLevel": "Fresher (0-1 YOE)",
-    "targetRoleType": "Full-time",
-    "workAuthorization": "Authorized to work without sponsorship",
-    "requiresSponsorship": false,
-    "noticePeriodDays": 0,
-    "willingToRelocate": true,
-    "remotePreference": "Flexible",
-    "expectedSalary": "",
-    "currentSalary": ""
+    ]
   },
   "resume": {
     "fileName": "resume_1792685015952_shviamResume_offcampus2.pdf",
@@ -93,5 +83,5 @@
     "noticePeriodAnswer": "Available immediately as a fresher graduate.",
     "sponsorshipAnswer": "I am legally authorized to work and do not require visa sponsorship."
   },
-  "updatedAt": "2026-10-22T16:39:50.430Z"
+  "updatedAt": "2026-10-22T16:43:30.977Z"
 }

@@ -199,47 +199,77 @@
         </div>
       </section>
 
-      <!-- ================= TAB 2: FRESHER ROLE MATCHER ================= -->
+      <!-- ================= TAB 2: AUTONOMOUS JOB DISCOVERY RADAR ================= -->
       <section class="tab-panel" id="tab-matcher">
         <div class="panel-header">
-          <h2>Fresher & Target Role Discovery</h2>
-          <p>Provide any company's general career portal URL. The agent scans open openings and filters out senior roles, pinpointing graduate, fresher, and entry-level positions matching your tech stack.</p>
+          <h2>Autonomous Job Discovery Radar</h2>
+          <p>The agent autonomously discovers top IT and product companies actively recruiting freshers and junior software engineers in India. No need to manually hunt for career links—click scan to see hiring portals and auto-apply.</p>
         </div>
 
-        <div class="card glass-card">
-          <form id="matcherForm" class="matcher-form">
-            <div class="form-row">
-              <div class="form-group flex-2">
-                <label for="matcherCareersUrl">Company Careers Portal URL</label>
-                <input type="url" id="matcherCareersUrl" placeholder="https://rakuten.careers or https://careers.google.com" required>
-              </div>
-              <div class="form-group flex-1">
-                <label for="matcherRoleQuery">Target Role Filter</label>
-                <input type="text" id="matcherRoleQuery" placeholder="Software Engineer (Fresher)">
-              </div>
-              <div class="form-group flex-btn">
-                <button type="submit" class="btn btn-primary" id="searchRolesBtn">
-                  <span>🔍 Scan Careers Page</span>
-                </button>
-              </div>
+        <!-- Radar Discovery Controls -->
+        <div class="card glass-card" style="margin-bottom: 2rem;">
+          <div class="card-title">
+            <span class="icon">📡</span> Auto-Discover Active Hiring Portals
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="radarRoleQuery">Target Role / Keywords</label>
+              <input type="text" id="radarRoleQuery" placeholder="Software Engineer (Fresher / 0-1 YOE)">
             </div>
-          </form>
+            <div class="form-group flex-1">
+              <label for="radarLocationQuery">Location</label>
+              <input type="text" id="radarLocationQuery" placeholder="India (Pune, Bengaluru, Remote)">
+            </div>
+            <div class="form-group flex-btn">
+              <button type="button" class="btn btn-primary" id="btnDiscoverIndiaCompanies">
+                <span>⚡ Auto-Scan Hiring Companies</span>
+              </button>
+            </div>
+          </div>
 
-          <div class="roles-results" id="rolesResults">
-            <div class="empty-state">Enter a career page URL above to discover eligible roles.</div>
+          <!-- Discovered Companies Live Grid -->
+          <div class="radar-companies-grid" id="discoveredCompaniesGrid">
+            <!-- Dynamically populated with hiring companies in India -->
+          </div>
+
+          <!-- Collapsible Specific URL Scanner -->
+          <details class="override-details" style="margin-top: 1.5rem;">
+            <summary>Want to scan a specific custom career portal URL instead?</summary>
+            <form id="matcherForm" class="matcher-form" style="margin-top: 1rem;">
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label for="matcherCareersUrl">Specific Career Portal URL</label>
+                  <input type="url" id="matcherCareersUrl" placeholder="https://www.accenture.com/in-en/careers/jobsearch or https://careers.rakuten.com">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="matcherRoleQuery">Role Keyword Filter</label>
+                  <input type="text" id="matcherRoleQuery" placeholder="Associate Software Engineer">
+                </div>
+                <div class="form-group flex-btn">
+                  <button type="submit" class="btn btn-primary" id="searchRolesBtn">
+                    <span>🔍 Crawl Portal DOM</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </details>
+
+          <!-- Live Scraped Openings Result -->
+          <div class="roles-results" id="rolesResults" style="margin-top: 1.5rem;">
+            <div class="empty-state">Click "Auto-Scan Hiring Companies" above or enter a portal link to crawl real job openings.</div>
           </div>
         </div>
       </section>
 
-      <!-- ================= TAB 3: RESUME & KNOWLEDGE ================= -->
+      <!-- ================= TAB 3: MULTI-RESUME & KNOWLEDGE ================= -->
       <section class="tab-panel" id="tab-resume">
         <div class="panel-header">
-          <h2>Resume & Anti-Hallucination Knowledge Base</h2>
-          <p>Drop your resume PDF once. The agent structures it into a verified candidate knowledge base that powers all screener answers.</p>
+          <h2>Multi-Resume Manager & Knowledge Base</h2>
+          <p>Upload and manage multiple resumes (e.g. Full-Stack vs. Backend/Go). Switch active resumes anytime—the agent automatically uses the active resume for applications and question answering.</p>
         </div>
 
         <div class="resume-grid">
-          <!-- Upload Area -->
+          <!-- Upload Area & Resumes List -->
           <div class="card glass-card">
             <div class="card-title">
               <span class="icon">📤</span> Upload Resume (PDF)
@@ -253,9 +283,12 @@
               <span class="file-status" id="uploadStatusText"></span>
             </div>
 
-            <div class="current-resume-info" id="currentResumeInfo">
-              <span class="label">Current Active Resume:</span>
-              <span class="value" id="currentResumeName">None uploaded</span>
+            <!-- Uploaded Resumes Switcher -->
+            <div class="uploaded-resumes-section" style="margin-top: 1.8rem;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 0.8rem; color: #cbd5e1;">Your Resumes (Select Active Resume)</h4>
+              <div class="resumes-list" id="resumesListContainer">
+                <!-- Dynamically populated resume cards with active switch -->
+              </div>
             </div>
           </div>
 
@@ -460,20 +493,17 @@
 
         <div class="card glass-card">
           <div class="card-title">
-            <span class="icon">➕</span> Add Gemini API Key
+            <span class="icon">➕</span> Add Gemini API Keys (Single or Batch)
           </div>
           <form id="addApiKeyForm" class="key-add-form">
-            <div class="form-row">
-              <div class="form-group flex-2">
-                <input type="text" id="newApiKeyInput" placeholder="Paste Google Gemini API Key (e.g. AIzaSy...)" required>
-              </div>
-              <div class="form-group flex-btn">
-                <button type="submit" class="btn btn-primary">
-                  ➕ Add to Pool
-                </button>
-              </div>
+            <div class="form-group">
+              <label for="newApiKeyInput">Paste 1 or Multiple Gemini API Keys (Separated by commas, spaces, or new lines)</label>
+              <textarea id="newApiKeyInput" rows="3" placeholder="Paste all your keys at once:&#10;AIzaSyA123...&#10;AIzaSyB456...&#10;AIzaSyC789..." required style="resize: vertical; font-family: monospace; font-size: 0.88rem;"></textarea>
             </div>
-            <small class="helper-text">💡 Get 100% free API keys from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. You can add keys from different accounts for unlimited continuous applications!</small>
+            <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.8rem 1.8rem;">
+              ➕ Add All Keys to Pool
+            </button>
+            <small class="helper-text" style="margin-top: 0.8rem;">💡 Get 100% free API keys from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. You can paste keys from different Google accounts for unlimited failover applications!</small>
           </form>
 
           <h3 class="section-heading" style="margin-top: 2rem;">Active API Keys in Pool</h3>

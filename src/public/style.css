@@ -1011,6 +1011,128 @@ input:focus, select:focus, textarea:focus {
   text-decoration: underline;
 }
 
+/* Autonomous Radar Cards */
+.radar-companies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.5rem;
+}
+
+.company-radar-card {
+  background: rgba(11, 15, 23, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: var(--transition);
+}
+
+.company-radar-card:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+  transform: translateY(-2px);
+}
+
+.radar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+
+.radar-company-name {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.radar-role-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #a5f3fc;
+  margin-bottom: 0.4rem;
+}
+
+.radar-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
+}
+
+.radar-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.radar-actions button {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Resume Item Cards */
+.resumes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.resume-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1.2rem;
+  background: rgba(11, 15, 23, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.resume-item-card.is-active {
+  border-color: var(--emerald);
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.12);
+}
+
+.resume-item-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.resume-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .console-grid, .resume-grid, .review-content-grid {
