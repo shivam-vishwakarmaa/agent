@@ -146,19 +146,22 @@ app.post('/api/jobs/search-roles', async (req, res) => {
   if (!careersUrl) return res.status(400).json({ error: 'Careers URL is required' });
 
   try {
-    await browserController.navigateTo(careersUrl);
-    const minified = await browserController.extractMinifiedForm();
     const profile = sessionStore.getProfile();
+    const query = rolePreference || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
 
-    const jobs = await jobMatcher.extractOpenRolesFromHtml(
-      careersUrl,
-      minified.pageTextSnippet,
-      rolePreference || profile.preferences.preferredRoles[0]
+    // Real interactive browser crawl of the company career page
+    const scrapedJobs = await browserController.scanCareerPortal(careersUrl, query);
+
+    // Real match scoring using candidate's actual resume skills & fresher preferences
+    const scoredJobs = jobMatcher.matchRolesFromPage(
+      scrapedJobs,
+      profile.preferences || {},
+      profile.resume?.skills || {}
     );
 
-    const scoredJobs = await jobMatcher.matchRolesFromPage(jobs, profile.preferences);
-    res.json({ success: true, jobs: scoredJobs });
+    res.json({ success: true, count: scoredJobs.length, jobs: scoredJobs });
   } catch (err) {
+    console.error('[Server] Job scan error:', err);
     res.status(500).json({ error: err.message });
   }
 });

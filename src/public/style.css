@@ -778,10 +778,82 @@ input:focus, select:focus, textarea:focus {
 .section-heading {
   font-family: var(--font-heading);
   font-size: 1.1rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.5rem;
   color: #cbd5e1;
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 0.5rem;
+}
+
+.section-subtext {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.2rem;
+}
+
+/* Resume Extracted Banner */
+.resume-extracted-banner {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-md);
+  padding: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.banner-title {
+  margin-bottom: 1rem;
+}
+
+.banner-title p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.4rem;
+}
+
+.extracted-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.extracted-pill {
+  background: rgba(11, 15, 23, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.pill-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.pill-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #a7f3d0;
+  word-break: break-all;
+}
+
+.override-details {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.override-details summary {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.override-details summary:hover {
+  color: var(--cyan);
 }
 
 /* API Keys Pool */

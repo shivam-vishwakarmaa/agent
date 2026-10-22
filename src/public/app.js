@@ -246,13 +246,26 @@ document.addEventListener('DOMContentLoaded', () => {
     jobs.forEach(job => {
       const card = document.createElement('div');
       card.className = 'role-card';
+
+      const skillsHtml = (job.matchedSkills && job.matchedSkills.length > 0)
+        ? `<div class="tags-container" style="margin-bottom:0.8rem;">
+            ${job.matchedSkills.map(s => `<span class="skill-tag" style="font-size:0.75rem;">✓ ${escapeHtml(s)}</span>`).join('')}
+           </div>`
+        : '';
+
+      const scoreColor = job.matchScore >= 70 ? '#6ee7b7' : (job.matchScore >= 50 ? '#fde68a' : '#fda4af');
+
       card.innerHTML = `
         <div>
           <div class="role-header">
             <h4 class="role-title">${escapeHtml(job.title)}</h4>
-            <span class="match-score">${job.matchScore}% Match</span>
+            <span class="match-score" style="color:${scoreColor}; border-color:${scoreColor}40;">${job.matchScore}% Match</span>
           </div>
-          <div class="role-location">📍 ${escapeHtml(job.location || 'Location Not Specified')} • ${escapeHtml(job.experienceLevel || 'Fresher Eligible')}</div>
+          <div class="role-location">📍 ${escapeHtml(job.location || 'Location Not Specified')} • ${job.isFresherFriendly ? '🌱 Fresher Friendly' : '⚡ Experience Required'}</div>
+          ${skillsHtml}
+          <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.4;">
+            💡 <strong>Match Reason:</strong> ${escapeHtml(job.reason || 'General role match')}
+          </div>
         </div>
         <button class="btn btn-primary btn-apply-direct" data-url="${escapeHtml(job.url || '')}" data-title="${escapeHtml(job.title)}">
           ⚡ Apply to this Role
@@ -390,22 +403,44 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = profile.personal || {};
       const prefs = profile.preferences || {};
 
-      document.getElementById('fullName').value = p.fullName || '';
-      document.getElementById('email').value = p.email || '';
-      document.getElementById('phone').value = p.phone || '';
-      document.getElementById('dateOfBirth').value = p.dateOfBirth || '';
-      document.getElementById('gender').value = p.gender || 'Prefer not to say';
-      document.getElementById('currentCity').value = p.currentCity || '';
-      document.getElementById('linkedinUrl').value = p.linkedinUrl || '';
-      document.getElementById('githubUrl').value = p.githubUrl || '';
-      document.getElementById('portfolioUrl').value = p.portfolioUrl || '';
+      // 1. Update Auto-Extracted Resume Pills
+      const setPill = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (val && String(val).trim()) {
+            el.textContent = val;
+            el.style.color = '#a7f3d0';
+          } else {
+            el.textContent = '(Not detected in resume)';
+            el.style.color = 'var(--text-muted)';
+          }
+        }
+      };
 
-      document.getElementById('experienceLevel').value = prefs.experienceLevel || 'Fresher (0-1 YOE)';
-      document.getElementById('noticePeriodDays').value = String(prefs.noticePeriodDays ?? 0);
-      document.getElementById('requiresSponsorship').value = String(prefs.requiresSponsorship ?? false);
-      document.getElementById('willingToRelocate').value = String(prefs.willingToRelocate ?? true);
-      document.getElementById('remotePreference').value = prefs.remotePreference || 'Flexible';
-      document.getElementById('preferredRoles').value = (prefs.preferredRoles || []).join(', ');
+      setPill('displayFullName', p.fullName);
+      setPill('displayEmail', p.email);
+      setPill('displayPhone', p.phone);
+      setPill('displayLinkedin', p.linkedinUrl);
+      setPill('displayGithub', p.githubUrl);
+      setPill('displayPortfolio', p.portfolioUrl);
+
+      // 2. Populate form inputs (for fallbacks and optional override)
+      if (document.getElementById('fullName')) document.getElementById('fullName').value = p.fullName || '';
+      if (document.getElementById('email')) document.getElementById('email').value = p.email || '';
+      if (document.getElementById('phone')) document.getElementById('phone').value = p.phone || '';
+      if (document.getElementById('dateOfBirth')) document.getElementById('dateOfBirth').value = p.dateOfBirth || '';
+      if (document.getElementById('gender')) document.getElementById('gender').value = p.gender || 'Prefer not to say';
+      if (document.getElementById('currentCity')) document.getElementById('currentCity').value = p.currentCity || '';
+      if (document.getElementById('linkedinUrl')) document.getElementById('linkedinUrl').value = p.linkedinUrl || '';
+      if (document.getElementById('githubUrl')) document.getElementById('githubUrl').value = p.githubUrl || '';
+      if (document.getElementById('portfolioUrl')) document.getElementById('portfolioUrl').value = p.portfolioUrl || '';
+
+      if (document.getElementById('experienceLevel')) document.getElementById('experienceLevel').value = prefs.experienceLevel || 'Fresher (0-1 YOE)';
+      if (document.getElementById('noticePeriodDays')) document.getElementById('noticePeriodDays').value = String(prefs.noticePeriodDays ?? 0);
+      if (document.getElementById('requiresSponsorship')) document.getElementById('requiresSponsorship').value = String(prefs.requiresSponsorship ?? false);
+      if (document.getElementById('willingToRelocate')) document.getElementById('willingToRelocate').value = String(prefs.willingToRelocate ?? true);
+      if (document.getElementById('remotePreference')) document.getElementById('remotePreference').value = prefs.remotePreference || 'Flexible';
+      if (document.getElementById('preferredRoles')) document.getElementById('preferredRoles').value = (prefs.preferredRoles || []).join(', ');
 
       if (p.fullName) {
         quickName.textContent = p.fullName;

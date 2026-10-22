@@ -300,26 +300,85 @@
 
         <div class="card glass-card">
           <form id="profileForm">
-            <h3 class="section-heading">Personal Details</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="fullName">Full Name</label>
-                <input type="text" id="fullName">
+            <!-- SECTION 1: AUTO-EXTRACTED FROM RESUME -->
+            <div class="resume-extracted-banner">
+              <div class="banner-title">
+                <span class="badge badge-success">✨ AUTO-EXTRACTED FROM RESUME</span>
+                <p>The agent automatically retrieves these directly from your uploaded resume. You do <strong>not</strong> need to type them manually!</p>
               </div>
-              <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email">
+
+              <div class="extracted-fields-grid">
+                <div class="extracted-pill">
+                  <span class="pill-label">Full Name:</span>
+                  <span class="pill-value" id="displayFullName">Extracted from resume</span>
+                </div>
+                <div class="extracted-pill">
+                  <span class="pill-label">Email:</span>
+                  <span class="pill-value" id="displayEmail">Extracted from resume</span>
+                </div>
+                <div class="extracted-pill">
+                  <span class="pill-label">Phone:</span>
+                  <span class="pill-value" id="displayPhone">Extracted from resume</span>
+                </div>
+                <div class="extracted-pill">
+                  <span class="pill-label">LinkedIn:</span>
+                  <span class="pill-value" id="displayLinkedin">Extracted from resume</span>
+                </div>
+                <div class="extracted-pill">
+                  <span class="pill-label">GitHub:</span>
+                  <span class="pill-value" id="displayGithub">Extracted from resume</span>
+                </div>
+                <div class="extracted-pill">
+                  <span class="pill-label">Portfolio:</span>
+                  <span class="pill-value" id="displayPortfolio">Extracted from resume</span>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone">
-              </div>
+
+              <!-- Collapsible Manual Override Form (Hidden by default) -->
+              <details class="override-details">
+                <summary>Need to edit or override resume contact info?</summary>
+                <div class="form-row" style="margin-top: 1rem;">
+                  <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName">
+                  </div>
+                  <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email">
+                  </div>
+                  <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="linkedinUrl">LinkedIn URL</label>
+                    <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/username">
+                  </div>
+                  <div class="form-group">
+                    <label for="githubUrl">GitHub URL</label>
+                    <input type="url" id="githubUrl" placeholder="https://github.com/username">
+                  </div>
+                  <div class="form-group">
+                    <label for="portfolioUrl">Portfolio / Website</label>
+                    <input type="url" id="portfolioUrl" placeholder="https://myportfolio.dev">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="currentCity">Current City & State</label>
+                  <input type="text" id="currentCity" placeholder="City, State">
+                </div>
+              </details>
             </div>
 
+            <!-- SECTION 2: REQUIRED FALLBACKS NOT IN RESUME -->
+            <h3 class="section-heading" style="margin-top: 2rem;">Required Fallbacks (Information NOT in Resumes)</h3>
+            <p class="section-subtext">Company portals (like Rakuten, Workday, Taleo) ask about birth dates, notice periods, and work authorization. Fill these once below so your agent answers with 100% truthfulness.</p>
             <div class="form-row">
               <div class="form-group">
-                <label for="dateOfBirth">Date of Birth</label>
-                <input type="date" id="dateOfBirth">
+                <label for="dateOfBirth">Date of Birth <span class="req">*</span></label>
+                <input type="date" id="dateOfBirth" required>
               </div>
               <div class="form-group">
                 <label for="gender">Gender</label>
@@ -329,25 +388,6 @@
                   <option value="Non-binary">Non-binary</option>
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label for="currentCity">City & State</label>
-                <input type="text" id="currentCity" placeholder="Mumbai, Maharashtra">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="linkedinUrl">LinkedIn URL</label>
-                <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/username">
-              </div>
-              <div class="form-group">
-                <label for="githubUrl">GitHub URL</label>
-                <input type="url" id="githubUrl" placeholder="https://github.com/username">
-              </div>
-              <div class="form-group">
-                <label for="portfolioUrl">Portfolio / Website</label>
-                <input type="url" id="portfolioUrl" placeholder="https://myportfolio.dev">
               </div>
             </div>
 

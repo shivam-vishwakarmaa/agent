@@ -100,6 +100,114 @@ class BrowserController {
   }
 
   /**
+   * Deeply scans a career portal: searches keywords, scrolls, and extracts actual job listings & links from the DOM
+   */
+  async scanCareerPortal(careersUrl, roleQuery = '') {
+    await this.init();
+    console.log(`[Browser] Scanning career portal: ${careersUrl} for "${roleQuery}"`);
+    await this.page.goto(careersUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await this.page.waitForTimeout(3000);
+
+    // Step 1: Look for search input and search for the role query if provided
+    if (roleQuery && roleQuery.trim().length > 0) {
+      try {
+        const searchInput = this.page.locator('input[type="search"], input[name*="search" i], input[name*="keyword" i], input[name*="query" i], input[placeholder*="search" i], input[placeholder*="job" i], input[placeholder*="role" i], input[placeholder*="title" i], [aria-label*="search" i]').first();
+        if (await searchInput.count() > 0) {
+          console.log(`[Browser] Found career search bar. Typing "${roleQuery}"...`);
+          await searchInput.click();
+          await searchInput.fill('');
+          await searchInput.fill(roleQuery);
+          await this.page.keyboard.press('Enter');
+          await this.page.waitForTimeout(3500);
+        }
+      } catch (e) {
+        console.log('[Browser] No active search bar found or search error, proceeding with page scan...');
+      }
+    }
+
+    // Step 2: Scroll down to trigger lazy loading and dynamic list rendering
+    try {
+      for (let i = 0; i < 3; i++) {
+        await this.page.evaluate(() => window.scrollBy(0, 800));
+        await this.page.waitForTimeout(800);
+      }
+    } catch (e) {}
+
+    // Step 3: Extract actual job cards, links, titles, and locations from DOM
+    const extractedJobs = await this.page.evaluate(() => {
+      const results = [];
+      const seenUrls = new Set();
+
+      // Priority 1: Elements with job link patterns
+      const jobLinkPatterns = [
+        '/job/', '/jobs/', '/position/', '/positions/', '/opening/', '/openings/',
+        '/careers/', 'gh_jid=', 'lever.co/', 'greenhouse.io/', 'myworkdayjobs.com/',
+        'ashbyhq.com/', 'smartrecruiters.com/'
+      ];
+
+      const allLinks = Array.from(document.querySelectorAll('a[href]'));
+
+      for (const a of allLinks) {
+        const href = a.href;
+        const text = (a.innerText || a.textContent || '').trim().replace(/\s+/g, ' ');
+
+        // Skip empty, short, or obvious navigation links
+        if (!text || text.length < 3 || text.length > 120) continue;
+        if (seenUrls.has(href)) continue;
+
+        const isJobUrl = jobLinkPatterns.some(pat => href.toLowerCase().includes(pat));
+        const isJobClass = (a.className || '').toLowerCase().includes('job') || 
+                           (a.getAttribute('data-automation-id') || '').toLowerCase().includes('job') ||
+                           (a.getAttribute('data-qa') || '').toLowerCase().includes('job');
+
+        if (isJobUrl || isJobClass) {
+          // Find closest container for location or department
+          const container = a.closest('li, tr, [class*="card"], [class*="item"], [class*="row"]') || a;
+          let location = '';
+          const locEl = container.querySelector('[class*="location"], [class*="Location"], [data-automation-id*="location"]');
+          if (locEl) {
+            location = locEl.innerText.trim();
+          }
+
+          seenUrls.add(href);
+          results.push({
+            title: text,
+            url: href,
+            location: location || '',
+            snippet: container.innerText.substring(0, 300).replace(/\s+/g, ' ').trim()
+          });
+        }
+      }
+
+      // Priority 2: Standard job listing table or cards if no direct job links found
+      if (results.length === 0) {
+        const jobCards = Array.from(document.querySelectorAll('[data-qa="job"], [data-automation-id*="job"], [class*="job-listing"], [class*="job-tile"], [class*="career-item"], .opening'));
+        for (const card of jobCards) {
+          const titleEl = card.querySelector('h1, h2, h3, h4, a, [class*="title"]') || card;
+          const linkEl = card.querySelector('a[href]') || (card.tagName.toLowerCase() === 'a' ? card : null);
+          const title = titleEl.innerText.trim().replace(/\s+/g, ' ');
+          const href = linkEl ? linkEl.href : window.location.href;
+
+          if (title && !seenUrls.has(href)) {
+            seenUrls.add(href);
+            results.push({
+              title,
+              url: href,
+              location: card.querySelector('[class*="location"]')?.innerText.trim() || '',
+              snippet: card.innerText.substring(0, 300).replace(/\s+/g, ' ').trim()
+            });
+          }
+        }
+      }
+
+      return results.slice(0, 25);
+    });
+
+    console.log(`[Browser] Extracted ${extractedJobs.length} real job openings from DOM.`);
+    return extractedJobs;
+  }
+
+  /**
    * Extract minified interactive form elements
    */
   async extractMinifiedForm() {
