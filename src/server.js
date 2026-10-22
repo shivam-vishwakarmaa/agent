@@ -15,6 +15,7 @@ const { resumeParser } = require('./parsers/resumeParser');
 const { applicationOrchestrator } = require('./automation/applicationOrchestrator');
 const { jobMatcher } = require('./ai/jobMatcher');
 const { jobFinder } = require('./ai/jobFinder');
+const { queryNormalizer } = require('./ai/queryNormalizer');
 const { browserController } = require('./automation/browser');
 
 const app = express();
@@ -180,7 +181,8 @@ app.post('/api/session/approve', (req, res) => {
 app.post('/api/jobs/discover', async (req, res) => {
   const { targetRole, location } = req.body;
   const profile = sessionStore.getProfile();
-  const role = targetRole || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
+  const rawRole = targetRole || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
+  const roleMeta = queryNormalizer.normalizeQuery(rawRole);
   const loc = location || profile.personal?.currentCity || 'India';
   const skills = [
     ...(profile.resume?.skills?.languages || []),
@@ -188,8 +190,15 @@ app.post('/api/jobs/discover', async (req, res) => {
   ];
 
   try {
-    const companies = await jobFinder.discoverHiringPortals(role, loc, skills);
-    res.json({ success: true, companies });
+    const companies = await jobFinder.discoverHiringPortals(roleMeta.corrected, loc, skills);
+    res.json({
+      success: true,
+      queryUsed: roleMeta.corrected,
+      hasTypoCorrection: roleMeta.hasCorrection,
+      originalQuery: roleMeta.original,
+      expandedRoles: queryNormalizer.getExpandedRoles(roleMeta.corrected),
+      companies
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -204,19 +213,28 @@ app.post('/api/jobs/search-roles', async (req, res) => {
 
   try {
     const profile = sessionStore.getProfile();
-    const query = rolePreference || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
+    const rawQuery = rolePreference || profile.preferences?.preferredRoles?.[0] || 'Software Engineer';
+    const queryMeta = queryNormalizer.normalizeQuery(rawQuery);
 
-    // Real interactive browser crawl of the company career page
-    const scrapedJobs = await browserController.scanCareerPortal(careersUrl, query);
+    // Real interactive browser crawl of the company career page using corrected query
+    const scrapedJobs = await browserController.scanCareerPortal(careersUrl, queryMeta.corrected);
 
-    // Real match scoring using candidate's actual resume skills & fresher preferences
+    // Real match scoring using candidate's actual resume skills & semantic role taxonomy
     const scoredJobs = jobMatcher.matchRolesFromPage(
       scrapedJobs,
-      profile.preferences || {},
+      { ...(profile.preferences || {}), preferredRoles: [queryMeta.corrected] },
       profile.resume?.skills || {}
     );
 
-    res.json({ success: true, count: scoredJobs.length, jobs: scoredJobs });
+    res.json({
+      success: true,
+      count: scoredJobs.length,
+      queryUsed: queryMeta.corrected,
+      hasTypoCorrection: queryMeta.hasCorrection,
+      originalQuery: queryMeta.original,
+      expandedRoles: queryNormalizer.getExpandedRoles(queryMeta.corrected),
+      jobs: scoredJobs
+    });
   } catch (err) {
     console.error('[Server] Job scan error:', err);
     res.status(500).json({ error: err.message });

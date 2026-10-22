@@ -1,8 +1,4 @@
-/**
- * Job & Role Matcher (Deep DOM & Resume Skill Matching Engine)
- * Ranks real scraped job openings against the candidate's actual resume skills,
- * preferred roles, and experience level (Fresher / Entry-Level).
- */
+const { queryNormalizer } = require('./queryNormalizer');
 
 class JobMatcher {
   /**
@@ -54,15 +50,14 @@ class JobMatcher {
         matchReasons.push('Explicitly tagged as Fresher / Entry-Level');
       }
 
-      // 3. Check title match against candidate's preferred roles
+      // 3. Check title match against candidate's preferred roles with semantic taxonomy & typo tolerance
       const matchesPreferred = preferredRoles.some(pref => {
-        const words = pref.split(' ');
-        return words.every(w => titleLower.includes(w)) || titleLower.includes(pref);
+        return queryNormalizer.isSemanticMatch(job.title, pref);
       });
 
       if (matchesPreferred) {
         score += 25;
-        matchReasons.push('Direct match with your preferred role');
+        matchReasons.push('Matches target role or specialization (Frontend, Backend, SDE, Platform, etc.)');
       }
 
       // 4. Compare against candidate's actual resume skills

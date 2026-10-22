@@ -43,13 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   modeCardReview.addEventListener('click', () => updateModeSelection('review'));
   modeCardAuto.addEventListener('click', () => updateModeSelection('auto'));
 
-  // Load Initial Data
-  loadProfile();
-  loadResumes();
-  loadApiKeys();
-  startSessionPolling();
-  discoverCompanies(); // Load India hiring companies on startup!
-
   // ==================== 1. Target Application Console ====================
   const applyForm = document.getElementById('applyForm');
   const startApplyBtn = document.getElementById('startApplyBtn');
@@ -217,12 +210,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function discoverCompanies() {
-    btnDiscoverIndiaCompanies.disabled = true;
-    btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Scanning Portals...</span>';
-    discoveredCompaniesGrid.innerHTML = '<div class="empty-state">Scanning active tech hiring portals in India...</div>';
+    if (btnDiscoverIndiaCompanies) {
+      btnDiscoverIndiaCompanies.disabled = true;
+      btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Scanning Portals...</span>';
+    }
+    if (discoveredCompaniesGrid) {
+      discoveredCompaniesGrid.innerHTML = '<div class="empty-state">Scanning active tech hiring portals in India...</div>';
+    }
 
-    const targetRole = radarRoleQuery.value.trim() || 'Software Engineer';
-    const location = radarLocationQuery.value.trim() || 'India';
+    const targetRole = (radarRoleQuery && radarRoleQuery.value.trim()) || 'Software Engineer';
+    const location = (radarLocationQuery && radarLocationQuery.value.trim()) || 'India';
 
     try {
       const res = await fetch('/api/jobs/discover', {
@@ -231,22 +228,35 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ targetRole, location })
       });
       const data = await res.json();
-      renderDiscoveredCompanies(data.companies || []);
+      renderDiscoveredCompanies(data.companies || [], data);
     } catch (err) {
-      discoveredCompaniesGrid.innerHTML = `<div class="empty-state" style="color:var(--rose)">Error: ${escapeHtml(err.message)}</div>`;
+      if (discoveredCompaniesGrid) {
+        discoveredCompaniesGrid.innerHTML = `<div class="empty-state" style="color:var(--rose)">Error: ${escapeHtml(err.message)}</div>`;
+      }
     } finally {
-      btnDiscoverIndiaCompanies.disabled = false;
-      btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Auto-Scan Hiring Companies</span>';
+      if (btnDiscoverIndiaCompanies) {
+        btnDiscoverIndiaCompanies.disabled = false;
+        btnDiscoverIndiaCompanies.innerHTML = '<span>⚡ Auto-Scan Hiring Companies</span>';
+      }
     }
   }
 
-  function renderDiscoveredCompanies(companies) {
+  function renderDiscoveredCompanies(companies, meta = {}) {
     if (companies.length === 0) {
       discoveredCompaniesGrid.innerHTML = '<div class="empty-state">No portals returned. Try adjusting role keywords.</div>';
       return;
     }
 
-    discoveredCompaniesGrid.innerHTML = companies.map(c => `
+    const typoBanner = meta.hasTypoCorrection ? `
+      <div style="grid-column: 1 / -1; margin-bottom: 0.5rem; padding: 0.8rem 1.2rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--primary); border-radius: 8px; font-size: 0.85rem; color: #e2e8f0;">
+        ✨ <strong>Spelling Auto-Corrected:</strong> "<em>${escapeHtml(meta.originalQuery)}</em>" ➔ <strong>"${escapeHtml(meta.queryUsed)}"</strong>
+        <span style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem;">
+          Includes expanded roles: Frontend, Backend, Full Stack, SDE 1, Platform & Trainee positions.
+        </span>
+      </div>
+    ` : '';
+
+    discoveredCompaniesGrid.innerHTML = typoBanner + companies.map(c => `
       <div class="company-radar-card">
         <div>
           <div class="radar-card-header">
@@ -316,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to scan roles');
 
-      renderMatchedRoles(data.jobs || []);
+      renderMatchedRoles(data.jobs || [], data);
     } catch (err) {
       rolesResults.innerHTML = `<div class="empty-state" style="color:var(--rose)">Error: ${escapeHtml(err.message)}</div>`;
     } finally {
@@ -325,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderMatchedRoles(jobs) {
+  function renderMatchedRoles(jobs, meta = {}) {
     if (jobs.length === 0) {
       rolesResults.innerHTML = '<div class="empty-state">No matching roles found on this portal. Try a different role query or company portal.</div>';
       return;
@@ -333,6 +343,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const container = document.createElement('div');
     container.className = 'roles-list';
+
+    if (meta.hasTypoCorrection) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'padding: 0.8rem 1.2rem; margin-bottom: 1rem; background: rgba(139, 92, 246, 0.15); border: 1px solid var(--primary); border-radius: 8px; font-size: 0.85rem; color: #e2e8f0;';
+      banner.innerHTML = `
+        ✨ <strong>Spelling Auto-Corrected:</strong> "<em>${escapeHtml(meta.originalQuery)}</em>" ➔ <strong>"${escapeHtml(meta.queryUsed)}"</strong>
+        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem;">
+          Semantic role expansion active: Matching Frontend, Backend, Full Stack, SDE & Platform positions.
+        </div>
+      `;
+      container.appendChild(banner);
+    }
 
     jobs.forEach(job => {
       const card = document.createElement('div');
@@ -749,4 +771,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
+  // ==================== Initialize Application on Load ====================
+  loadProfile();
+  loadResumes();
+  loadApiKeys();
+  startSessionPolling();
+  discoverCompanies();
 });

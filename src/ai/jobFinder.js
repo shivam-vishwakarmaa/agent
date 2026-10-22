@@ -20,10 +20,10 @@ class JobFinder {
         tags: ['IT Services', 'Top Recruiter', 'Fresher Friendly']
       },
       {
-        company: 'Rakuten India',
-        careersUrl: 'https://careers.rakuten.com/search-jobs/India',
+        company: 'Rakuten',
+        careersUrl: 'https://japan-job-en.rakuten.careers/search-jobs/Software/31066/1',
         typicalFresherRole: 'Associate Software Engineer / Junior Backend Engineer',
-        locations: 'Bengaluru, Pune, Remote',
+        locations: 'Bengaluru, Pune, Remote, Global',
         experienceRequired: '0 - 1 YOE',
         hiringStatus: 'Actively Hiring',
         tags: ['Product Company', 'Tech Giant', 'High Pay']
@@ -39,7 +39,7 @@ class JobFinder {
       },
       {
         company: 'Razorpay',
-        careersUrl: 'https://razorpay.com/jobs/',
+        careersUrl: 'https://razorpay.com/careers/',
         typicalFresherRole: 'Software Development Engineer - 1 (SDE 1)',
         locations: 'Bengaluru, Remote',
         experienceRequired: '0 - 1 YOE',
@@ -48,7 +48,7 @@ class JobFinder {
       },
       {
         company: 'Capgemini India',
-        careersUrl: 'https://www.capgemini.com/in-en/careers/job-search/',
+        careersUrl: 'https://www.capgemini.com/in-en/careers/join-us/',
         typicalFresherRole: 'Software Analyst / Associate Software Engineer',
         locations: 'Pune, Mumbai, Bengaluru, Hyderabad',
         experienceRequired: 'Fresher (0 - 1 YOE)',
@@ -57,7 +57,7 @@ class JobFinder {
       },
       {
         company: 'Persistent Systems',
-        careersUrl: 'https://www.persistent.com/careers/',
+        careersUrl: 'https://careers.persistent.com/',
         typicalFresherRole: 'Software Engineer - Trainee',
         locations: 'Pune, Hyderabad, Bengaluru, Goa',
         experienceRequired: 'Fresher / 0-1 YOE',
@@ -75,7 +75,7 @@ class JobFinder {
       },
       {
         company: 'Swiggy',
-        careersUrl: 'https://careers.swiggy.com/#/jobs',
+        careersUrl: 'https://careers.swiggy.in/',
         typicalFresherRole: 'Software Development Engineer 1 (Backend/FullStack)',
         locations: 'Bengaluru, Remote',
         experienceRequired: '0 - 2 YOE',
@@ -84,7 +84,7 @@ class JobFinder {
       },
       {
         company: 'Josh Technology Group',
-        careersUrl: 'https://www.joshtechnologygroup.com/careers',
+        careersUrl: 'https://www.joshtechnologygroup.com/careers/',
         typicalFresherRole: 'Software Development Engineer (Backend / Systems)',
         locations: 'Gurugram, Pune, Remote',
         experienceRequired: 'Fresher / Early Career',

@@ -5,6 +5,7 @@ data/resumes/*
 data/sessions/*
 !data/sessions/.gitkeep
 data/browser_profile/
+data/keys.json
 screenshots/
 logs/
 .DS_Store

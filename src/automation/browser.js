@@ -8,6 +8,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const { DomMinifier } = require('../parsers/domMinifier');
+const { queryNormalizer } = require('../ai/queryNormalizer');
 
 class BrowserController {
   constructor() {
@@ -30,6 +31,20 @@ class BrowserController {
   }
 
   /**
+   * Normalize and sanitize job/careers URLs universally for ANY company
+   */
+  normalizeUrl(rawUrl) {
+    if (!rawUrl) return '';
+    let url = rawUrl.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      url = 'https://' + url;
+    }
+    // Remove accidental trailing brackets, semicolons or spaces
+    url = url.replace(/[\s\)\],;>]+$/, '');
+    return url;
+  }
+
+  /**
    * Initialize or reuse browser instance
    */
   async init() {
@@ -38,18 +53,37 @@ class BrowserController {
     }
 
     console.log(`[Browser] Launching browser (headless: ${this.isHeadless})...`);
-    this.context = await chromium.launchPersistentContext(this.userDataDir, {
-      headless: this.isHeadless,
-      viewport: { width: 1440, height: 900 },
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-      args: [
-        '--disable-blink-features=AutomationControlled',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-infobars',
-        '--window-size=1440,900'
-      ]
-    });
+    const launchArgs = [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-infobars',
+      '--disable-http2',
+      '--window-size=1440,900'
+    ];
+
+    try {
+      this.context = await chromium.launchPersistentContext(this.userDataDir, {
+        headless: this.isHeadless,
+        viewport: { width: 1440, height: 900 },
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+        args: launchArgs
+      });
+    } catch (err) {
+      if (err.message.includes('ProcessSingleton') || err.message.includes('lock') || err.message.includes('Lock file')) {
+        console.warn('[Browser] Profile directory locked by another process. Launching clean isolated session...');
+        this.browser = await chromium.launch({
+          headless: this.isHeadless,
+          args: launchArgs
+        });
+        this.context = await this.browser.newContext({
+          viewport: { width: 1440, height: 900 },
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // Stealth script injection to hide automation signatures
     await this.context.addInitScript(() => {
@@ -70,17 +104,24 @@ class BrowserController {
   /**
    * Navigate to target job URL
    */
-  async navigateTo(url) {
+  async navigateTo(rawUrl) {
     await this.init();
+    const url = this.normalizeUrl(rawUrl);
     console.log(`[Browser] Navigating to: ${url}`);
     
     try {
-      await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+      await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 40000 });
       // Allow dynamic single page applications (React/Vue/Workday) to render
       await this.page.waitForTimeout(3000);
       return this.page;
     } catch (err) {
       console.error(`[Browser] Navigation error: ${err.message}`);
+      if (err.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        throw new Error(`Domain not found (DNS error). The web address "${url}" could not be reached. Please check the URL or use "Crawl Open Jobs" from the Discovery Radar.`);
+      }
+      if (err.message.includes('ERR_CONNECTION_REFUSED')) {
+        throw new Error(`Connection refused by server at "${url}". The career portal may be temporarily down.`);
+      }
       throw err;
     }
   }
@@ -102,21 +143,36 @@ class BrowserController {
   /**
    * Deeply scans a career portal: searches keywords, scrolls, and extracts actual job listings & links from the DOM
    */
-  async scanCareerPortal(careersUrl, roleQuery = '') {
+  async scanCareerPortal(rawCareersUrl, roleQuery = '') {
     await this.init();
+    const careersUrl = this.normalizeUrl(rawCareersUrl);
     console.log(`[Browser] Scanning career portal: ${careersUrl} for "${roleQuery}"`);
-    await this.page.goto(careersUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    try {
+      await this.page.goto(careersUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    } catch (err) {
+      if (err.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        throw new Error(`Domain not found (DNS error). Could not reach "${careersUrl}".`);
+      }
+      throw err;
+    }
     await this.page.waitForTimeout(3000);
 
     // Step 1: Look for search input and search for the role query if provided
     if (roleQuery && roleQuery.trim().length > 0) {
+      // Auto-correct spelling/typos before typing into search bar (e.g. "softwaer enginer" -> "software engineer")
+      const { corrected, hasCorrection } = queryNormalizer.normalizeQuery(roleQuery);
+      const queryToSearch = corrected || roleQuery.trim();
+
       try {
         const searchInput = this.page.locator('input[type="search"], input[name*="search" i], input[name*="keyword" i], input[name*="query" i], input[placeholder*="search" i], input[placeholder*="job" i], input[placeholder*="role" i], input[placeholder*="title" i], [aria-label*="search" i]').first();
         if (await searchInput.count() > 0) {
-          console.log(`[Browser] Found career search bar. Typing "${roleQuery}"...`);
+          if (hasCorrection) {
+            console.log(`[Browser] Corrected typo: "${roleQuery}" ➔ "${queryToSearch}" for portal search.`);
+          }
+          console.log(`[Browser] Found career search bar. Typing "${queryToSearch}"...`);
           await searchInput.click();
           await searchInput.fill('');
-          await searchInput.fill(roleQuery);
+          await searchInput.fill(queryToSearch);
           await this.page.keyboard.press('Enter');
           await this.page.waitForTimeout(3500);
         }
