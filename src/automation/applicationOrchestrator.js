@@ -63,6 +63,38 @@ class ApplicationOrchestrator {
         const minified = await browserController.extractMinifiedForm();
         sessionStore.addSessionLog(`Found ${minified.fields.length} interactive fields on current page.`, 'info');
 
+        // Check if current page has actual candidate profile fields (Name, Email, Phone, Resume, etc.)
+        const candidateKeywords = ['name', 'first', 'last', 'email', 'phone', 'mobile', 'resume', 'cv', 'address', 'education', 'experience', 'github', 'linkedin'];
+        const hasCandidateFields = minified.fields.some(f => {
+          const l = (f.label || f.name || f.placeholder || '').toLowerCase();
+          return candidateKeywords.some(kw => l.includes(kw));
+        });
+
+        // Smart check 1: If on a search/directory page (no candidate fields, but has job openings links)
+        const jobLinks = page.locator('a[href*="/job/"], a[href*="/opening/"], a[href*="/careers/jobdetails"], a[href*="/position/"]').first();
+        if (!hasCandidateFields && await jobLinks.count() > 0 && await jobLinks.isVisible()) {
+          const rawJobText = (await jobLinks.innerText()).trim();
+          const jobTitle = rawJobText.split('\n')[0] || 'Top Matched Role';
+          sessionStore.addSessionLog(`Detected career portal search directory. Opening top vacancy: "${jobTitle}"...`, 'info');
+          await jobLinks.click();
+          await page.waitForTimeout(4500);
+          continue;
+        }
+
+        // Smart check 2: If on a job details page with an "Apply" button (no candidate fields yet)
+        const applyBtn = page.locator('a:has-text("Apply"), button:has-text("Apply"), [data-automation-id*="apply" i], a[href*="/apply" i]').first();
+        if (!hasCandidateFields && await applyBtn.count() > 0 && await applyBtn.isVisible()) {
+          const btnText = (await applyBtn.innerText()).trim() || 'Apply';
+          sessionStore.addSessionLog(`Found "${btnText}" button on job overview page. Launching application form...`, 'info');
+          await applyBtn.click();
+          await page.waitForTimeout(4500);
+          continue;
+        }
+
+        if (!hasCandidateFields && step === 1) {
+          sessionStore.addSessionLog('⚠️ No candidate application form or job openings detected on this page. Please enter a direct job posting URL or crawl open jobs from the radar.', 'warn');
+        }
+
         // Fill fields using profile and AI screener
         sessionStore.updateSession({ status: 'FILLING' });
         const profile = sessionStore.getProfile();
@@ -87,8 +119,8 @@ class ApplicationOrchestrator {
         const nextBtn = minified.buttons.find(b => b.actionType === 'next');
         const reviewBtn = minified.buttons.find(b => b.actionType === 'review');
 
-        // Detect if we reached Review Stage OR only Submit is left
-        const isAtFinalStage = Boolean(reviewBtn || (submitBtn && !nextBtn));
+        // Detect if we reached Review Stage (requires actual filled fields or explicit review button)
+        const isAtFinalStage = Boolean(reviewBtn || (submitBtn && !nextBtn && session.fieldsFilled.length > 0));
 
         if (isAtFinalStage) {
           sessionStore.addSessionLog('Reached final application review stage!', 'info');
@@ -117,8 +149,12 @@ class ApplicationOrchestrator {
           if (submitBtn) {
             sessionStore.updateSession({ status: 'SUBMITTING' });
             sessionStore.addSessionLog(`Clicking Submit button ("${submitBtn.text}")...`, 'agent');
-            await page.locator(submitBtn.selector).first().click();
-            await page.waitForTimeout(4000);
+            try {
+              await page.locator(submitBtn.selector).first().click({ timeout: 8000 });
+              await page.waitForTimeout(4000);
+            } catch (clickErr) {
+              sessionStore.addSessionLog(`Notice on submit click: ${clickErr.message.split('\n')[0]}`, 'info');
+            }
 
             // Final confirmation screenshot
             const finalShot = await browserController.captureScreenshot('submission_confirmation');

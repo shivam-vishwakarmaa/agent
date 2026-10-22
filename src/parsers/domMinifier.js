@@ -88,6 +88,12 @@ class DomMinifier {
         if (style.display === 'none' && el.type !== 'file') return;
         if (style.visibility === 'hidden') return;
 
+        // Skip facet search filters (checkboxes in filter sidebars, category filters, etc.)
+        const isFilterElement = Boolean(
+          el.closest('.filter-section, #filters, .filters, .facet-search, .search-filters, [data-qa*="filter"], [id*="filter"]')
+        );
+        if (isFilterElement) return;
+
         const type = (el.type || el.tagName.toLowerCase()).toLowerCase();
         const rawLabel = findLabel(el);
         const label = cleanText(rawLabel);
@@ -119,6 +125,9 @@ class DomMinifier {
       // 2. Process Custom React/Workday/Vue Combobox Dropdowns
       const customDropdowns = Array.from(document.querySelectorAll('[role="combobox"], [role="listbox"], [data-automation-id*="dropdown"], .select2-container'));
       customDropdowns.forEach((el, idx) => {
+        // Skip facet filters
+        if (el.closest('.filter-section, #filters, .filters, .facet-search, .search-filters, [data-qa*="filter"]')) return;
+
         const rawLabel = findLabel(el);
         const label = cleanText(rawLabel);
         fields.push({
@@ -137,18 +146,34 @@ class DomMinifier {
       });
 
       // 3. Process Navigation & Action Buttons (Submit, Next, Review, Apply)
-      const actionElements = Array.from(document.querySelectorAll('button, input[type="submit"], a[role="button"], [data-automation-id*="bottom-navigation-next-button"]'));
+      const actionElements = Array.from(document.querySelectorAll('button, input[type="submit"], a[role="button"], a.btn, a[class*="apply"], [data-automation-id*="bottom-navigation-next-button"]'));
       actionElements.forEach((el) => {
+        // Skip invisible buttons
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden' || el.offsetParent === null) return;
+        if (el.disabled || el.getAttribute('aria-hidden') === 'true') return;
+
+        // Skip search filter buttons (e.g. #filter-apply-handler)
+        const isFilterBtn = Boolean(
+          el.id.toLowerCase().includes('filter') ||
+          (el.className && typeof el.className === 'string' && el.className.toLowerCase().includes('filter')) ||
+          el.closest('.filter-section, #filters, .filters, .facet-search, .search-filters, [id*="filter"]')
+        );
+        if (isFilterBtn) return;
+
         const text = (el.innerText || el.value || '').trim().toLowerCase();
         if (!text) return;
 
         let actionType = 'other';
-        if (text.includes('submit') || text.includes('apply') || text.includes('send application') || text.includes('finish')) {
+        // Classify Submit (final application submit) vs Apply (launching form from job overview)
+        if (text.includes('submit application') || text === 'submit' || text.includes('send application') || text.includes('finish') || text.includes('confirm application')) {
           actionType = 'submit';
         } else if (text.includes('next') || text.includes('continue') || text.includes('save and continue') || text.includes('proceed')) {
           actionType = 'next';
         } else if (text.includes('review') || text.includes('verify')) {
           actionType = 'review';
+        } else if (text.includes('apply now') || text === 'apply' || text.includes('apply manually') || text.includes('easy apply') || text.includes('apply with')) {
+          actionType = 'apply';
         }
 
         if (actionType !== 'other') {
