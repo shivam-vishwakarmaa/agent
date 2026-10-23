@@ -206,6 +206,22 @@
               </div>
             </div>
 
+            <!-- Workday / ATS Authentication Gateway Card (shown when WAITING_FOR_AUTH) -->
+            <div class="auth-gate-card hidden" id="authGateCard">
+              <div class="auth-gate-header">
+                <span class="auth-gate-icon">🔐</span>
+                <div>
+                  <h4 id="authGateTitle">Workday / Portal Authentication Required</h4>
+                  <p id="authGateDesc">The employer portal requires you to complete sign-in or enter the email verification code sent to your inbox.</p>
+                </div>
+              </div>
+              <div class="auth-gate-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btnResumeAuth">
+                  ✅ I've Completed Sign-In / Verified Code - Continue
+                </button>
+              </div>
+            </div>
+
             <!-- Error Diagnostic Box (shown when session fails) -->
             <div class="error-diag-card hidden" id="errorDiagnosticCard">
               <div class="error-diag-header">

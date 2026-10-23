@@ -94,6 +94,11 @@ class DomMinifier {
         );
         if (isFilterElement) return;
 
+        // Skip honeypot anti-bot fields (e.g. Workday beecatcher)
+        if (el.getAttribute('data-automation-id') === 'beecatcher' || el.name === 'website' || (el.getAttribute('aria-label') || '').includes('for robots only')) {
+          return;
+        }
+
         const type = (el.type || el.tagName.toLowerCase()).toLowerCase();
         const rawLabel = findLabel(el);
         const label = cleanText(rawLabel);

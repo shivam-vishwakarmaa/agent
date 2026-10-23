@@ -20,7 +20,7 @@ class JobMatcher {
     ].map(s => s.toLowerCase().trim()).filter(Boolean);
 
     const seniorKeywords = ['senior', 'sr.', 'lead', 'principal', 'staff', 'manager', 'director', 'vp', 'head of', 'architect', '5+ years', '8+ years', '10+ years'];
-    const fresherKeywords = ['fresher', 'graduate', 'entry', 'junior', 'jr.', 'associate', 'trainee', 'intern', 'early career', 'new grad', '0-1 years', '0-2 years', 'campus'];
+    const fresherKeywords = ['fresher', 'graduate', 'entry', 'junior', 'jr.', 'associate', 'trainee', 'intern', 'early career', 'new grad', '0-1 years', '0-2 years', 'campus', '2028', '2027', '2026', 'recent graduate', 'college'];
 
     const scoredJobs = jobListings.map(job => {
       const titleLower = (job.title || '').toLowerCase();

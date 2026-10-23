@@ -179,6 +179,11 @@ app.post('/api/session/approve', (req, res) => {
   res.json({ success: approved, message: approved ? 'Approved for final submission' : 'No pending review found' });
 });
 
+app.post('/api/session/resume-auth', (req, res) => {
+  const resumed = applicationOrchestrator.resumeAuth();
+  res.json({ success: resumed, message: resumed ? 'Resumed application execution' : 'Not waiting for authentication' });
+});
+
 // ==================== Autonomous Role Discovery Endpoints ====================
 
 /**

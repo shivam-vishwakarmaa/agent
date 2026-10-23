@@ -71,13 +71,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRetryApplication = document.getElementById('btnRetryApplication');
   const btnDismissError = document.getElementById('btnDismissError');
 
+  const authGateCard = document.getElementById('authGateCard');
+  const btnResumeAuth = document.getElementById('btnResumeAuth');
+
   const terminalLogCount = document.getElementById('terminalLogCount');
   const headerLiveActivity = document.getElementById('headerLiveActivity');
   const headerLiveText = document.getElementById('headerLiveText');
 
+  if (btnResumeAuth) {
+    btnResumeAuth.addEventListener('click', async () => {
+      btnResumeAuth.disabled = true;
+      btnResumeAuth.textContent = 'Resuming Application...';
+      try {
+        const res = await fetch('/api/session/resume-auth', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (authGateCard) authGateCard.classList.add('hidden');
+        }
+      } catch (e) {} finally {
+        btnResumeAuth.disabled = false;
+        btnResumeAuth.textContent = "✅ I've Completed Sign-In / Verified Code - Continue";
+      }
+    });
+  }
+
   if (btnRetryApplication) {
     btnRetryApplication.addEventListener('click', () => {
       if (errorDiagnosticCard) errorDiagnosticCard.classList.add('hidden');
+      if (authGateCard) authGateCard.classList.add('hidden');
       if (applyForm) {
         applyForm.dispatchEvent(new Event('submit'));
       }
@@ -103,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startApplyBtn.innerHTML = '<span>⏳ Agent Initializing...</span>';
     reviewContainer.classList.add('hidden');
     if (errorDiagnosticCard) errorDiagnosticCard.classList.add('hidden');
+    if (authGateCard) authGateCard.classList.add('hidden');
 
     // Reset live terminal
     terminalLogs.innerHTML = '';
@@ -190,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'IDLE': 0,
       'INITIALIZING': 15,
       'NAVIGATING': 35,
+      'WAITING_FOR_AUTH': 45,
       'ANALYZING': 55,
       'FILLING': 75,
       'WAITING_FOR_REVIEW': 90,
@@ -208,7 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Update Error Diagnostic Box
     updateErrorDiagnostic(session);
 
-    // 4. Update Header Live Pill
+    // 4. Update Authentication Gateway Card
+    if (session.status === 'WAITING_FOR_AUTH') {
+      if (authGateCard) authGateCard.classList.remove('hidden');
+    } else {
+      if (authGateCard) authGateCard.classList.add('hidden');
+    }
+
+    // 5. Update Header Live Pill
     updateHeaderLiveActivity(session);
 
     // 5. Append new logs
