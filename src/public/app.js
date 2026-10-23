@@ -111,6 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSignInInstead = document.getElementById('btnSignInInstead');
   const btnResumeAuth = document.getElementById('btnResumeAuth');
 
+  // Session Control Buttons (Pause, Resume, Cancel)
+  const btnPauseSession = document.getElementById('btnPauseSession');
+  const btnResumeSession = document.getElementById('btnResumeSession');
+  const btnCancelSession = document.getElementById('btnCancelSession');
+
   if (btnToggleAuthPass && authPasswordInput) {
     btnToggleAuthPass.addEventListener('click', () => {
       const isPass = authPasswordInput.type === 'password';
@@ -199,6 +204,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ==================== Live Session Controls (Pause, Resume, Cancel) ====================
+  if (btnPauseSession) {
+    btnPauseSession.addEventListener('click', async () => {
+      btnPauseSession.disabled = true;
+      try {
+        const res = await fetch('/api/session/pause', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          btnPauseSession.classList.add('hidden');
+          if (btnResumeSession) btnResumeSession.classList.remove('hidden');
+        }
+      } catch (err) {
+        alert('Failed to pause session: ' + err.message);
+      } finally {
+        btnPauseSession.disabled = false;
+      }
+    });
+  }
+
+  if (btnResumeSession) {
+    btnResumeSession.addEventListener('click', async () => {
+      btnResumeSession.disabled = true;
+      try {
+        const res = await fetch('/api/session/resume', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          btnResumeSession.classList.add('hidden');
+          if (btnPauseSession) btnPauseSession.classList.remove('hidden');
+        }
+      } catch (err) {
+        alert('Failed to resume session: ' + err.message);
+      } finally {
+        btnResumeSession.disabled = false;
+      }
+    });
+  }
+
+  if (btnCancelSession) {
+    btnCancelSession.addEventListener('click', async () => {
+      const confirmCancel = confirm('Are you sure you want to stop and cancel the active application session?');
+      if (!confirmCancel) return;
+
+      btnCancelSession.disabled = true;
+      btnCancelSession.innerHTML = '<span>⏳ Stopping...</span>';
+      try {
+        const res = await fetch('/api/session/cancel', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (btnPauseSession) btnPauseSession.classList.add('hidden');
+          if (btnResumeSession) btnResumeSession.classList.add('hidden');
+          btnCancelSession.classList.add('hidden');
+          startApplyBtn.disabled = false;
+          startApplyBtn.innerHTML = '<span class="action-arrow">→</span>';
+          appendLog({
+            timestamp: new Date().toLocaleTimeString(),
+            type: 'warn',
+            actionTag: 'CANCEL',
+            message: 'Application session stopped and cancelled by user.'
+          });
+        }
+      } catch (err) {
+        alert('Failed to cancel session: ' + err.message);
+      } finally {
+        btnCancelSession.disabled = false;
+        btnCancelSession.innerHTML = '<span>⏹️ Cancel</span>';
+      }
+    });
+  }
+
   applyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const jobUrl = document.getElementById('targetJobUrl').value.trim();
@@ -276,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Polling loop for active session
   let lastLogCount = 0;
+  let lastSnapshotCount = -1;
   function startSessionPolling() {
     setInterval(async () => {
       try {
@@ -303,12 +378,46 @@ document.addEventListener('DOMContentLoaded', () => {
       'WAITING_FOR_AUTH': 45,
       'ANALYZING': 55,
       'FILLING': 75,
+      'PAUSED': 75,
       'WAITING_FOR_REVIEW': 90,
       'SUBMITTING': 95,
       'COMPLETED': 100,
-      'FAILED': 100
+      'FAILED': 100,
+      'CANCELLED': 100
     };
     sessionProgressBar.style.width = `${progressMap[session.status] || 0}%`;
+
+    // Toggle Live Session Controls (Pause, Resume, Cancel)
+    const isRunning = ['INITIALIZING', 'NAVIGATING', 'ANALYZING', 'FILLING', 'SUBMITTING'].includes(session.status);
+    const isPaused = session.status === 'PAUSED';
+    const isWaiting = ['WAITING_FOR_REVIEW', 'WAITING_FOR_AUTH', 'CAPTCHA_PAUSE'].includes(session.status);
+
+    if (btnPauseSession && btnResumeSession && btnCancelSession) {
+      if (isRunning) {
+        btnPauseSession.classList.remove('hidden');
+        btnResumeSession.classList.add('hidden');
+        btnCancelSession.classList.remove('hidden');
+      } else if (isPaused) {
+        btnPauseSession.classList.add('hidden');
+        btnResumeSession.classList.remove('hidden');
+        btnCancelSession.classList.remove('hidden');
+      } else if (isWaiting) {
+        btnPauseSession.classList.add('hidden');
+        btnResumeSession.classList.add('hidden');
+        btnCancelSession.classList.remove('hidden');
+      } else {
+        // IDLE, COMPLETED, FAILED, CANCELLED
+        btnPauseSession.classList.add('hidden');
+        btnResumeSession.classList.add('hidden');
+        btnCancelSession.classList.add('hidden');
+      }
+    }
+
+    if (session.status === 'CANCELLED') {
+      startApplyBtn.disabled = false;
+      startApplyBtn.innerHTML = '<span class="action-arrow">→</span>';
+      if (radarPulseEffect) radarPulseEffect.classList.remove('active');
+    }
 
     // 1. Update Hero Status Card
     updateHeroStatusCard(session);
@@ -369,6 +478,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (session.status === 'COMPLETED' || session.status === 'FAILED') {
       startApplyBtn.disabled = false;
       startApplyBtn.innerHTML = '<span class="btn-icon">⚡</span> Launch Application Agent';
+    }
+
+    // 7. Update Proof Snapshots Gallery if new snapshots arrived
+    const currentSnapCount = (session.snapshots && session.snapshots.length) || (session.screenshots && session.screenshots.length) || 0;
+    if (currentSnapCount !== lastSnapshotCount) {
+      lastSnapshotCount = currentSnapCount;
+      loadScreenshots();
     }
   }
 
@@ -1149,6 +1265,152 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==================== Visual Proof Snapshots Gallery & Clean Storage ====================
+  const proofSnapshotsGrid = document.getElementById('proofSnapshotsGrid');
+  const proofSnapshotsEmpty = document.getElementById('proofSnapshotsEmpty');
+  const snapshotCountBadge = document.getElementById('snapshotCountBadge');
+  const btnPurgeScreenshots = document.getElementById('btnPurgeScreenshots');
+
+  // Lightbox elements
+  const snapshotLightboxModal = document.getElementById('snapshotLightboxModal');
+  const lightboxOverlay = document.getElementById('lightboxOverlay');
+  const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
+  const lightboxDoneBtn = document.getElementById('lightboxDoneBtn');
+  const lightboxImage = document.getElementById('lightboxImage');
+  const lightboxTitle = document.getElementById('lightboxTitle');
+  const lightboxAction = document.getElementById('lightboxAction');
+  const lightboxBadge = document.getElementById('lightboxBadge');
+  const lightboxTimestamp = document.getElementById('lightboxTimestamp');
+  const lightboxDownloadBtn = document.getElementById('lightboxDownloadBtn');
+
+  async function loadScreenshots() {
+    try {
+      const res = await fetch('/api/screenshots');
+      const data = await res.json();
+      const list = data.screenshots || [];
+
+      if (snapshotCountBadge) {
+        snapshotCountBadge.textContent = `${list.length} Snapshot${list.length === 1 ? '' : 's'}`;
+      }
+
+      if (!proofSnapshotsGrid || !proofSnapshotsEmpty) return;
+
+      if (list.length === 0) {
+        proofSnapshotsGrid.innerHTML = '';
+        proofSnapshotsEmpty.classList.remove('hidden');
+        return;
+      }
+
+      proofSnapshotsEmpty.classList.add('hidden');
+      proofSnapshotsGrid.innerHTML = list.map(snap => {
+        const cat = (snap.category || 'SNAPSHOT').toLowerCase();
+        let badgeClass = 'badge-autofill';
+        let badgeText = snap.step ? `STEP ${snap.step}` : 'AUTOFILL';
+        if (cat === 'auth') {
+          badgeClass = 'badge-auth';
+          badgeText = 'AUTH GATE';
+        } else if (cat === 'review') {
+          badgeClass = 'badge-review';
+          badgeText = 'REVIEW';
+        } else if (cat === 'submission') {
+          badgeClass = 'badge-submission';
+          badgeText = 'SUBMISSION';
+        }
+
+        const sizeKb = Math.round((snap.sizeBytes || 0) / 1024);
+
+        return `
+          <div class="snapshot-card" data-filename="${snap.filename}">
+            <div class="snapshot-thumb-wrap" onclick="openSnapshotLightbox('${snap.url}', '${encodeURIComponent(snap.title)}', '${encodeURIComponent(snap.action)}', '${snap.timestamp}', '${badgeText}')">
+              <img src="${snap.url}" alt="${escapeHtml(snap.title)}" class="snapshot-thumb" loading="lazy" />
+              <span class="snapshot-overlay-badge ${badgeClass}">${badgeText}</span>
+              <span class="snapshot-zoom-hint">🔍 Enlarge</span>
+            </div>
+            <div class="snapshot-info">
+              <div class="snapshot-title-row">
+                <span class="snapshot-card-title">${escapeHtml(snap.title)}</span>
+              </div>
+              <p class="snapshot-card-desc">${escapeHtml(snap.action)}</p>
+              <div class="snapshot-card-footer">
+                <span class="snapshot-time">🕒 ${snap.timestamp} ${sizeKb ? `• ${sizeKb} KB` : ''}</span>
+                <button type="button" class="btn-inspect-snapshot" onclick="openSnapshotLightbox('${snap.url}', '${encodeURIComponent(snap.title)}', '${encodeURIComponent(snap.action)}', '${snap.timestamp}', '${badgeText}')">
+                  Inspect
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      console.error('[Gallery] Failed to load screenshots:', err);
+    }
+  }
+
+  window.openSnapshotLightbox = function(url, encodedTitle, encodedAction, timestamp, badgeText) {
+    if (!snapshotLightboxModal) return;
+    const title = decodeURIComponent(encodedTitle || '');
+    const action = decodeURIComponent(encodedAction || '');
+
+    if (lightboxImage) lightboxImage.src = url;
+    if (lightboxTitle) lightboxTitle.textContent = title || 'Snapshot Proof';
+    if (lightboxAction) lightboxAction.textContent = action || 'Automated action captured by agent';
+    if (lightboxTimestamp) lightboxTimestamp.textContent = timestamp || '';
+    if (lightboxBadge) lightboxBadge.textContent = badgeText || 'PROOF';
+    if (lightboxDownloadBtn) {
+      lightboxDownloadBtn.href = url;
+      lightboxDownloadBtn.download = url.split('/').pop();
+    }
+
+    snapshotLightboxModal.classList.remove('hidden');
+  };
+
+  function closeSnapshotLightbox() {
+    if (snapshotLightboxModal) snapshotLightboxModal.classList.add('hidden');
+    if (lightboxImage) lightboxImage.src = '';
+  }
+
+  if (lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeSnapshotLightbox);
+  if (lightboxDoneBtn) lightboxDoneBtn.addEventListener('click', closeSnapshotLightbox);
+  if (lightboxOverlay) lightboxOverlay.addEventListener('click', closeSnapshotLightbox);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && snapshotLightboxModal && !snapshotLightboxModal.classList.contains('hidden')) {
+      closeSnapshotLightbox();
+    }
+  });
+
+  if (btnPurgeScreenshots) {
+    btnPurgeScreenshots.addEventListener('click', async () => {
+      const confirmPurge = confirm('Are you sure you want to clean storage and permanently delete all old proof snapshots?');
+      if (!confirmPurge) return;
+
+      btnPurgeScreenshots.disabled = true;
+      btnPurgeScreenshots.innerHTML = '<span>⏳ Cleaning...</span>';
+
+      try {
+        const res = await fetch('/api/screenshots/purge', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendLog({
+            timestamp: new Date().toLocaleTimeString(),
+            type: 'info',
+            actionTag: 'STORAGE',
+            message: `Storage cleaned: Purged ${data.deletedCount} old proof snapshot(s).`
+          });
+          lastSnapshotCount = 0;
+          await loadScreenshots();
+        } else {
+          alert('Failed to clean storage: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error purging snapshots: ' + err.message);
+      } finally {
+        btnPurgeScreenshots.disabled = false;
+        btnPurgeScreenshots.innerHTML = '<span>🗑️ Clean Storage</span>';
+      }
+    });
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -1163,6 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadProfile();
   loadResumes();
   loadApiKeys();
+  loadScreenshots();
   startSessionPolling();
   discoverCompanies();
 });

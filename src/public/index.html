@@ -193,7 +193,21 @@
               <span class="section-icon">📡</span>
               <h3>Live Application Engine Monitor</h3>
             </div>
-            <span class="badge" id="sessionStatusBadge">IDLE</span>
+            <div class="card-header-right">
+              <!-- Live Session Controls: Pause, Resume, Cancel -->
+              <div class="session-controls" id="sessionControls">
+                <button type="button" class="btn-ctrl btn-pause hidden" id="btnPauseSession" title="Pause Active Application">
+                  <span>⏸️ Pause</span>
+                </button>
+                <button type="button" class="btn-ctrl btn-resume hidden" id="btnResumeSession" title="Resume Application">
+                  <span>▶️ Resume</span>
+                </button>
+                <button type="button" class="btn-ctrl btn-cancel hidden" id="btnCancelSession" title="Stop & Cancel Application">
+                  <span>⏹️ Cancel</span>
+                </button>
+              </div>
+              <span class="badge" id="sessionStatusBadge">IDLE</span>
+            </div>
           </div>
 
           <!-- Hero Radar Status Card with Pulsing Ring -->
@@ -356,6 +370,37 @@
                 <img id="reviewScreenshotImg" src="" alt="Application Screenshot Preview">
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Visual Proof Snapshots & Execution Gallery Card -->
+        <div class="card glass-card workspace-card snapshots-gallery-card" id="proofGallerySection">
+          <div class="card-header-row">
+            <div class="card-header-left">
+              <span class="section-icon">📸</span>
+              <div>
+                <h3>Visual Execution Snapshots & Proof Gallery</h3>
+                <p class="section-subtitle">Real-time verification snapshots captured only when the agent performs meaningful form actions</p>
+              </div>
+            </div>
+            <div class="gallery-header-actions">
+              <span class="badge badge-accent" id="snapshotCountBadge">0 Snapshots</span>
+              <button type="button" class="btn btn-secondary btn-sm btn-purge" id="btnPurgeScreenshots" title="Clean Storage & Purge All Snapshots">
+                <span>🗑️ Clean Storage</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Snapshots Grid Container -->
+          <div class="snapshots-grid" id="proofSnapshotsGrid">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Empty State -->
+          <div class="snapshots-empty-state" id="proofSnapshotsEmpty">
+            <div class="empty-icon">🖼️</div>
+            <h4>No Proof Snapshots Captured Yet</h4>
+            <p>Snapshots are captured automatically whenever the agent fills input fields, answers screener questions with AI, authenticates Workday portals, or reaches final review. Marketing sliders and empty steps are never saved.</p>
           </div>
         </div>
 
@@ -690,6 +735,31 @@
     </section>
 
   </main>
+
+  <!-- Full Screen Snapshot Lightbox Modal -->
+  <div class="lightbox-modal hidden" id="snapshotLightboxModal">
+    <div class="lightbox-overlay" id="lightboxOverlay"></div>
+    <div class="lightbox-dialog glass-card">
+      <div class="lightbox-header">
+        <div class="lightbox-header-titles">
+          <div class="lightbox-badge-row">
+            <span class="badge badge-accent" id="lightboxBadge">STEP PROOF</span>
+            <span class="lightbox-timestamp" id="lightboxTimestamp">12:00:00 PM</span>
+          </div>
+          <h3 id="lightboxTitle">Snapshot Title</h3>
+          <p id="lightboxAction">Action details</p>
+        </div>
+        <button type="button" class="lightbox-close-btn" id="lightboxCloseBtn" title="Close Preview">✕</button>
+      </div>
+      <div class="lightbox-body">
+        <img id="lightboxImage" src="" alt="Full Resolution Proof Preview" />
+      </div>
+      <div class="lightbox-footer">
+        <a id="lightboxDownloadBtn" href="" download class="btn btn-secondary btn-sm">💾 Download Image</a>
+        <button type="button" class="btn btn-primary btn-sm" id="lightboxDoneBtn">Close Preview</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
