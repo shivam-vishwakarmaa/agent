@@ -21,27 +21,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Mode Selection Cards (Review vs Auto)
+  // Mode Selection Cards (Review vs Auto) & Capsule Mode Selector
   const modeCardReview = document.getElementById('modeCardReview');
   const modeCardAuto = document.getElementById('modeCardAuto');
+  const capsuleModeSelect = document.getElementById('capsuleModeSelect');
   const currentModeBadge = document.getElementById('currentModeBadge');
+  const btnCapsuleAddResume = document.getElementById('btnCapsuleAddResume');
+  const btnCapsuleToggleDetails = document.getElementById('btnCapsuleToggleDetails');
+  const capsuleDetailsRow = document.getElementById('capsuleDetailsRow');
 
   function updateModeSelection(mode) {
+    if (capsuleModeSelect) capsuleModeSelect.value = mode;
     if (mode === 'review') {
-      modeCardReview.classList.add('selected');
-      modeCardAuto.classList.remove('selected');
-      modeCardReview.querySelector('input').checked = true;
-      currentModeBadge.textContent = '🛡️ Verification Mode';
+      if (modeCardReview) {
+        modeCardReview.classList.add('selected');
+        const inp = modeCardReview.querySelector('input');
+        if (inp) inp.checked = true;
+      }
+      if (modeCardAuto) modeCardAuto.classList.remove('selected');
+      if (currentModeBadge) currentModeBadge.textContent = '🛡️ Verification Mode';
     } else {
-      modeCardAuto.classList.add('selected');
-      modeCardReview.classList.remove('selected');
-      modeCardAuto.querySelector('input').checked = true;
-      currentModeBadge.textContent = '⚡ Full Auto-Pilot';
+      if (modeCardAuto) {
+        modeCardAuto.classList.add('selected');
+        const inp = modeCardAuto.querySelector('input');
+        if (inp) inp.checked = true;
+      }
+      if (modeCardReview) modeCardReview.classList.remove('selected');
+      if (currentModeBadge) currentModeBadge.textContent = '⚡ Full Auto-Pilot';
     }
   }
 
-  modeCardReview.addEventListener('click', () => updateModeSelection('review'));
-  modeCardAuto.addEventListener('click', () => updateModeSelection('auto'));
+  if (capsuleModeSelect) {
+    capsuleModeSelect.addEventListener('change', (e) => updateModeSelection(e.target.value));
+  }
+  if (modeCardReview) modeCardReview.addEventListener('click', () => updateModeSelection('review'));
+  if (modeCardAuto) modeCardAuto.addEventListener('click', () => updateModeSelection('auto'));
+
+  if (btnCapsuleAddResume) {
+    btnCapsuleAddResume.addEventListener('click', () => {
+      const fileInput = document.getElementById('resumeFileInput');
+      if (fileInput) fileInput.click();
+    });
+  }
+
+  if (btnCapsuleToggleDetails && capsuleDetailsRow) {
+    btnCapsuleToggleDetails.addEventListener('click', () => {
+      capsuleDetailsRow.classList.toggle('show');
+    });
+  }
 
   // ==================== 1. Target Application Console ====================
   const applyForm = document.getElementById('applyForm');

@@ -3,294 +3,329 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NexusApply AI | Autonomous Job Search & Application Agent</title>
+  <title>AgentFlow | Autonomous ATS Job Search & Application Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500;1,6..72,600;1,6..72,700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <!-- Background Glow Accents -->
-  <div class="glow-orb orb-1"></div>
-  <div class="glow-orb orb-2"></div>
-  <div class="glow-orb orb-3"></div>
+<body class="agentflow-theme">
 
-  <!-- Navigation Bar -->
+  <!-- Ambient Glowing Aura & Diagonal Tile Grid Texture -->
+  <div class="ambient-glow-mesh">
+    <div class="glow-sunset-aurora"></div>
+    <div class="glow-sunset-secondary"></div>
+    <div class="glow-tile-grid"></div>
+  </div>
+
+  <!-- Navigation Bar (Top Pill & Header) -->
   <header class="app-header">
-    <div class="brand">
-      <div class="brand-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
+    <div class="header-inner">
+      <!-- Left: Logo -->
+      <div class="brand">
+        <a href="#" class="brand-link">
+          <span class="brand-title">Agent<span class="brand-accent">Flow</span></span>
+        </a>
       </div>
-      <div>
-        <h1 class="brand-title">NexusApply <span class="badge-ai">AI AGENT</span></h1>
-        <p class="brand-subtitle">Autonomous ATS Job Application & Multi-API Key Failover Engine</p>
-      </div>
-    </div>
 
-    <!-- Active API Pool Indicator & Live Agent Activity -->
-    <div class="header-status">
-      <div class="agent-live-pill hidden" id="headerLiveActivity">
-        <span class="status-dot dot-pulse"></span>
-        <span id="headerLiveText">Agent Working...</span>
-      </div>
-      <div class="api-pill" id="apiPoolPill">
-        <span class="status-dot dot-active"></span>
-        <span id="apiPoolStatus">API Pool: 0 Active</span>
-      </div>
-      <div class="mode-pill" id="currentModeBadge">
-        🛡️ Verification Mode
+      <!-- Center: Floating Navigation Tabs -->
+      <nav class="nav-menu" id="mainNavMenu">
+        <button class="nav-item active" data-tab="tab-apply">
+          <span>Target Apply</span>
+        </button>
+        <button class="nav-item" data-tab="tab-matcher">
+          <span>Fresher Radar</span>
+        </button>
+        <button class="nav-item" data-tab="tab-resume">
+          <span>Resume Vault</span>
+        </button>
+        <button class="nav-item" data-tab="tab-profile">
+          <span>Profile & Credentials</span>
+        </button>
+        <button class="nav-item" data-tab="tab-apikeys">
+          <span>API Pool</span>
+        </button>
+      </nav>
+
+      <!-- Right: Status Indicators -->
+      <div class="header-status">
+        <div class="agent-live-pill hidden" id="headerLiveActivity">
+          <span class="status-dot dot-pulse"></span>
+          <span id="headerLiveText">Agent Working...</span>
+        </div>
+        <div class="api-pill" id="apiPoolPill">
+          <span class="status-dot dot-active"></span>
+          <span id="apiPoolStatus">API Pool: 1 Active</span>
+        </div>
+        <div class="mode-pill" id="currentModeBadge">
+          🛡️ Verification Mode
+        </div>
+        <div class="user-avatar-pill">
+          <div class="user-avatar" id="avatarLetter">S</div>
+          <span class="user-name" id="quickName" style="display:none;">Shivam</span>
+          <span class="user-role" id="quickRole" style="display:none;">Fresher (0-1 YOE)</span>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- Main Container -->
-  <div class="main-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-      <nav class="nav-menu">
-        <button class="nav-item active" data-tab="tab-apply">
-          <span class="nav-icon">🚀</span>
-          <span>Target Application</span>
-        </button>
-        <button class="nav-item" data-tab="tab-matcher">
-          <span class="nav-icon">🔍</span>
-          <span>Fresher Role Matcher</span>
-        </button>
-        <button class="nav-item" data-tab="tab-resume">
-          <span class="nav-icon">📄</span>
-          <span>Resume & Knowledge</span>
-        </button>
-        <button class="nav-item" data-tab="tab-profile">
-          <span class="nav-icon">⚙️</span>
-          <span>Profile & Fallbacks</span>
-        </button>
-        <button class="nav-item" data-tab="tab-apikeys">
-          <span class="nav-icon">🔑</span>
-          <span>API Key Failover Pool</span>
-        </button>
-      </nav>
+  <main class="main-container">
 
-      <div class="sidebar-footer">
-        <div class="user-quick-profile">
-          <div class="user-avatar" id="avatarLetter">A</div>
-          <div class="user-info">
-            <span class="user-name" id="quickName">Candidate</span>
-            <span class="user-role" id="quickRole">Fresher Candidate</span>
+    <!-- ================= TAB 1: TARGET APPLICATION CONSOLE (HERO + LIVE WORKSPACE) ================= -->
+    <section class="tab-panel active" id="tab-apply">
+      
+      <!-- HERO SECTION (Modeled directly after AgentFlow design) -->
+      <div class="agentflow-hero">
+        <!-- Floating Pill Badge -->
+        <div class="hero-announcement-pill">
+          <span class="pill-glow-dot"></span>
+          <span>2 Months Free - Annually • Autonomous ATS Engine</span>
+        </div>
+
+        <!-- Majestic Headline with Editorial Italic Accent -->
+        <h1 class="hero-headline">
+          Power <span class="editorial-accent">Job Applications</span><br>
+          with Clean Data. It's Open Source
+        </h1>
+
+        <!-- Central Frosted Glass Capsule (Core Agent Input) -->
+        <div class="hero-capsule-card">
+          <form id="applyForm">
+            <!-- Top Search/URL Input -->
+            <div class="capsule-input-container">
+              <input 
+                type="url" 
+                id="targetJobUrl" 
+                class="capsule-input" 
+                placeholder="Ask anything, or paste job posting URL / career portal..." 
+                required 
+                autocomplete="off" 
+              />
+            </div>
+
+            <!-- Expandable Company & Role Details Row (Toggleable or inline) -->
+            <div class="capsule-details-row" id="capsuleDetailsRow">
+              <div class="capsule-field">
+                <input type="text" id="targetCompanyName" class="capsule-sub-input" placeholder="Company Name (e.g. Rakuten, Stripe)" />
+              </div>
+              <div class="capsule-field">
+                <input type="text" id="targetJobTitle" class="capsule-sub-input" placeholder="Target Role (e.g. Software Engineer - Fresher)" />
+              </div>
+            </div>
+
+            <!-- Capsule Toolbar (Bottom Controls) -->
+            <div class="capsule-toolbar">
+              <!-- Left Actions -->
+              <div class="capsule-tools-left">
+                <button type="button" class="capsule-icon-btn" id="btnCapsuleAddResume" title="Upload Resume PDF">
+                  <span>+</span>
+                </button>
+                <button type="button" class="capsule-icon-btn" id="btnCapsuleToggleDetails" title="Toggle Company & Role inputs">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                </button>
+                <span class="capsule-meta-tag" id="capsuleResumeBadge">Resume: Active</span>
+              </div>
+
+              <!-- Right Actions: Mode Selector & Glowing Circular Submit Button -->
+              <div class="capsule-tools-right">
+                <div class="capsule-mode-selector">
+                  <select id="capsuleModeSelect" class="capsule-select">
+                    <option value="review" selected>Review & Verify Mode ⌵</option>
+                    <option value="auto">Full Auto-Pilot ⌵</option>
+                  </select>
+                  <!-- Hidden radio buttons for backwards compatibility with app.js -->
+                  <div style="display:none;">
+                    <label class="mode-card selected" id="modeCardReview">
+                      <input type="radio" name="execMode" value="review" checked>
+                    </label>
+                    <label class="mode-card" id="modeCardAuto">
+                      <input type="radio" name="execMode" value="auto">
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Glowing Orange Round Action Button -->
+                <button type="submit" class="capsule-action-circle" id="startApplyBtn" title="Launch Application Agent">
+                  <span class="action-arrow">→</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Ceramic ATS Logos Strip (Bottom of Hero) -->
+        <div class="ats-ceramic-strip">
+          <div class="ceramic-item">
+            <span class="ceramic-logo-text">workday<strong>.</strong></span>
+          </div>
+          <div class="ceramic-divider"></div>
+          <div class="ceramic-item">
+            <span class="ceramic-logo-text text-mode">M <strong>MODE</strong></span>
+          </div>
+          <div class="ceramic-divider"></div>
+          <div class="ceramic-item">
+            <span class="ceramic-logo-text text-intercom">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h2v2h-2v-2zm0-10h2v8h-2V6z"/></svg>
+              INTERCOM
+            </span>
+          </div>
+          <div class="ceramic-divider"></div>
+          <div class="ceramic-item">
+            <span class="ceramic-logo-text text-mosaic">❖ Mosaic</span>
+          </div>
+          <div class="ceramic-divider"></div>
+          <div class="ceramic-item">
+            <span class="ceramic-logo-text text-canopy">☖ Canopy</span>
           </div>
         </div>
       </div>
-    </aside>
 
-    <!-- Main Content Area -->
-    <main class="content-area">
-
-      <!-- ================= TAB 1: TARGET APPLICATION CONSOLE ================= -->
-      <section class="tab-panel active" id="tab-apply">
-        <div class="panel-header">
-          <h2>Autonomous Application Console</h2>
-          <p>Drop any company career URL or job posting link (Greenhouse, Lever, Workday, Rakuten, etc.). The agent will fill, answer screener questions, and present a verification card before final submission.</p>
-        </div>
-
-        <div class="console-grid">
-          <!-- Left: Input & Controls -->
-          <div class="card glass-card">
-            <div class="card-title">
-              <span class="icon">🎯</span> Target Job Information
+      <!-- LIVE EXECUTION WORKSPACE -->
+      <div class="live-workspace-section">
+        
+        <!-- Live Agent Monitor Card -->
+        <div class="card glass-card workspace-card">
+          <div class="card-header-row">
+            <div class="card-header-left">
+              <span class="section-icon">📡</span>
+              <h3>Live Application Engine Monitor</h3>
             </div>
-
-            <form id="applyForm">
-              <div class="form-group">
-                <label for="targetJobUrl">Job Posting or Career URL <span class="req">*</span></label>
-                <div class="input-with-icon">
-                  <span class="field-icon">🔗</span>
-                  <input type="url" id="targetJobUrl" placeholder="https://careers.company.com/job/12345" required>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="targetCompanyName">Company Name</label>
-                  <input type="text" id="targetCompanyName" placeholder="e.g. Rakuten, Google, Stripe">
-                </div>
-                <div class="form-group">
-                  <label for="targetJobTitle">Target Role</label>
-                  <input type="text" id="targetJobTitle" placeholder="e.g. Software Engineer (Fresher)">
-                </div>
-              </div>
-
-              <!-- Execution Mode Toggle -->
-              <div class="mode-toggle-container">
-                <div class="toggle-header">
-                  <span class="toggle-title">Execution Mode</span>
-                </div>
-                <div class="mode-options">
-                  <label class="mode-card selected" id="modeCardReview">
-                    <input type="radio" name="execMode" value="review" checked>
-                    <div class="mode-icon">🛡️</div>
-                    <div class="mode-text">
-                      <strong>Review & Verify (Recommended)</strong>
-                      <small>Agent fills everything, reaches the final step, and lets you verify all filled fields & screenshot before submitting.</small>
-                    </div>
-                  </label>
-
-                  <label class="mode-card" id="modeCardAuto">
-                    <input type="radio" name="execMode" value="auto">
-                    <div class="mode-icon">⚡</div>
-                    <div class="mode-text">
-                      <strong>Full Auto-Pilot</strong>
-                      <small>Hands-off mode. Agent completes all steps and automatically submits without waiting for manual confirmation.</small>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary btn-glow" id="startApplyBtn">
-                <span class="btn-icon">⚡</span> Launch Application Agent
-              </button>
-            </form>
+            <span class="badge" id="sessionStatusBadge">IDLE</span>
           </div>
 
-          <!-- Right: Live Execution Monitor -->
-          <div class="card glass-card">
-            <div class="card-title live-title">
-              <div>
-                <span class="icon">📡</span> Live Agent Activity
+          <!-- Hero Radar Status Card with Pulsing Ring -->
+          <div class="agent-hero-card" id="agentHeroCard">
+            <div class="hero-radar-icon">
+              <div class="radar-pulse" id="radarPulseEffect"></div>
+              <span class="radar-emoji" id="heroRadarEmoji">🤖</span>
+            </div>
+            <div class="hero-details">
+              <div class="hero-tags">
+                <span class="hero-tag tag-primary" id="heroActionChip">STATUS: IDLE</span>
+                <span class="hero-tag tag-muted" id="heroPlatformChip">Platform: Auto-Detect</span>
+                <span class="hero-tag tag-muted" id="heroStepChip">Step 0/0</span>
               </div>
-              <span class="badge" id="sessionStatusBadge">IDLE</span>
+              <h3 class="hero-action-title" id="heroActionTitle">Agent Ready</h3>
+              <p class="hero-action-detail" id="heroActionDetail">Paste any company job posting or career portal URL above and click "→" to launch autonomous form filling.</p>
+            </div>
+          </div>
+
+          <!-- 5-Step Execution Pipeline (Stepper) -->
+          <div class="pipeline-stepper" id="pipelineStepper">
+            <div class="pipe-step step-idle" id="pipeStep1">
+              <div class="pipe-circle">1</div>
+              <div class="pipe-text">Connect</div>
+            </div>
+            <div class="pipe-line" id="pipeLine1"></div>
+            <div class="pipe-step step-idle" id="pipeStep2">
+              <div class="pipe-circle">2</div>
+              <div class="pipe-text">Analyze</div>
+            </div>
+            <div class="pipe-line" id="pipeLine2"></div>
+            <div class="pipe-step step-idle" id="pipeStep3">
+              <div class="pipe-circle">3</div>
+              <div class="pipe-text">Fill & AI</div>
+            </div>
+            <div class="pipe-line" id="pipeLine3"></div>
+            <div class="pipe-step step-idle" id="pipeStep4">
+              <div class="pipe-circle">4</div>
+              <div class="pipe-text">Verify</div>
+            </div>
+            <div class="pipe-line" id="pipeLine4"></div>
+            <div class="pipe-step step-idle" id="pipeStep5">
+              <div class="pipe-circle">5</div>
+              <div class="pipe-text">Submit</div>
+            </div>
+          </div>
+
+          <!-- Workday / ATS Authentication Gateway Card (shown when WAITING_FOR_AUTH) -->
+          <div class="auth-gate-card hidden" id="authGateCard">
+            <div class="auth-gate-header">
+              <span class="auth-gate-icon">🔐</span>
+              <div class="auth-gate-title-wrap">
+                <h4 id="authGateTitle">Workday / Portal Authentication Required</h4>
+                <p id="authGateDesc">The employer portal requires you to create an account or verify credentials to proceed.</p>
+              </div>
             </div>
 
-            <!-- Agent Hero Status Card with Pulsing Ring -->
-            <div class="agent-hero-card" id="agentHeroCard">
-              <div class="hero-radar-icon">
-                <div class="radar-pulse" id="radarPulseEffect"></div>
-                <span class="radar-emoji" id="heroRadarEmoji">🤖</span>
-              </div>
-              <div class="hero-details">
-                <div class="hero-tags">
-                  <span class="hero-tag tag-primary" id="heroActionChip">STATUS: IDLE</span>
-                  <span class="hero-tag tag-muted" id="heroPlatformChip">Platform: Auto-Detect</span>
-                  <span class="hero-tag tag-muted" id="heroStepChip">Step 0/0</span>
+            <!-- Interactive Password Input Section (Shown when NEED_PASSWORD / CREATE_ACCOUNT) -->
+            <div class="auth-gate-form" id="authGateFormSection">
+              <div class="auth-form-row">
+                <div class="auth-form-field">
+                  <label for="authEmailInput">Account Login Email</label>
+                  <input type="email" id="authEmailInput" class="form-control form-control-sm" value="shivamvishwa844@gmail.com" />
                 </div>
-                <h3 class="hero-action-title" id="heroActionTitle">Agent is Ready</h3>
-                <p class="hero-action-detail" id="heroActionDetail">Enter a job URL on the left and click "Launch Application Agent" to start autonomous autofill and AI screener answering.</p>
-              </div>
-            </div>
-
-            <!-- 5-Step Execution Pipeline (Stepper) -->
-            <div class="pipeline-stepper" id="pipelineStepper">
-              <div class="pipe-step step-idle" id="pipeStep1">
-                <div class="pipe-circle">1</div>
-                <div class="pipe-text">Connect</div>
-              </div>
-              <div class="pipe-line" id="pipeLine1"></div>
-              <div class="pipe-step step-idle" id="pipeStep2">
-                <div class="pipe-circle">2</div>
-                <div class="pipe-text">Analyze</div>
-              </div>
-              <div class="pipe-line" id="pipeLine2"></div>
-              <div class="pipe-step step-idle" id="pipeStep3">
-                <div class="pipe-circle">3</div>
-                <div class="pipe-text">Fill & AI</div>
-              </div>
-              <div class="pipe-line" id="pipeLine3"></div>
-              <div class="pipe-step step-idle" id="pipeStep4">
-                <div class="pipe-circle">4</div>
-                <div class="pipe-text">Verify</div>
-              </div>
-              <div class="pipe-line" id="pipeLine4"></div>
-              <div class="pipe-step step-idle" id="pipeStep5">
-                <div class="pipe-circle">5</div>
-                <div class="pipe-text">Submit</div>
-              </div>
-            </div>
-
-            <!-- Workday / ATS Authentication Gateway Card (shown when WAITING_FOR_AUTH) -->
-            <div class="auth-gate-card hidden" id="authGateCard">
-              <div class="auth-gate-header">
-                <span class="auth-gate-icon">🔐</span>
-                <div class="auth-gate-title-wrap">
-                  <h4 id="authGateTitle">Workday / Portal Authentication Required</h4>
-                  <p id="authGateDesc">The employer portal requires you to create an account or verify credentials to proceed.</p>
-                </div>
-              </div>
-
-              <!-- Interactive Password Input Section (Shown when NEED_PASSWORD / CREATE_ACCOUNT) -->
-              <div class="auth-gate-form" id="authGateFormSection">
-                <div class="auth-form-row">
-                  <div class="auth-form-field">
-                    <label for="authEmailInput">Account Login Email</label>
-                    <input type="email" id="authEmailInput" class="form-control form-control-sm" value="shivamvishwa844@gmail.com" />
-                  </div>
-                  <div class="auth-form-field">
-                    <label for="authPasswordInput">Account Password <span class="text-muted">(Min 8 chars, 1 uppercase, 1 number)</span></label>
-                    <div class="password-input-wrap">
-                      <input type="password" id="authPasswordInput" class="form-control form-control-sm" placeholder="Enter password (e.g. Shivam#2028)" />
-                      <button type="button" class="btn-toggle-eye" id="btnToggleAuthPass" title="Show/Hide Password">👁️</button>
-                    </div>
+                <div class="auth-form-field">
+                  <label for="authPasswordInput">Account Password <span class="text-muted">(Min 8 chars, 1 uppercase, 1 number)</span></label>
+                  <div class="password-input-wrap">
+                    <input type="password" id="authPasswordInput" class="form-control form-control-sm" placeholder="Enter password (e.g. Shivam#2028)" />
+                    <button type="button" class="btn-toggle-eye" id="btnToggleAuthPass" title="Show/Hide Password">👁️</button>
                   </div>
                 </div>
-                <div class="auth-form-meta">
-                  <label class="remember-checkbox">
-                    <input type="checkbox" id="authRememberPassword" checked />
-                    <span>Save password for future portals</span>
-                  </label>
-                </div>
-                <div class="auth-gate-actions">
-                  <button type="button" class="btn btn-primary btn-sm" id="btnSubmitAuthCredentials">
-                    🚀 Create Account & Proceed Application
-                  </button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="btnSignInInstead">
-                    🔑 Sign In With This Password
-                  </button>
-                </div>
               </div>
-
-              <!-- Verification / OTP Section (Shown when OTP_REQUIRED or manual verification) -->
-              <div class="auth-gate-verify hidden" id="authGateVerifySection">
-                <div class="auth-gate-actions">
-                  <button type="button" class="btn btn-primary btn-sm" id="btnResumeAuth">
-                    ✅ I've Completed Sign-In / Verified Code - Continue
-                  </button>
-                </div>
+              <div class="auth-form-meta">
+                <label class="remember-checkbox">
+                  <input type="checkbox" id="authRememberPassword" checked />
+                  <span>Save password for future portals</span>
+                </label>
+              </div>
+              <div class="auth-gate-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btnSubmitAuthCredentials">
+                  🚀 Create Account & Proceed Application
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnSignInInstead">
+                  🔑 Sign In With This Password
+                </button>
               </div>
             </div>
 
-            <!-- Error Diagnostic Box (shown when session fails) -->
-            <div class="error-diag-card hidden" id="errorDiagnosticCard">
-              <div class="error-diag-header">
-                <span class="error-diag-icon">🚨</span>
-                <div class="error-diag-titles">
-                  <h4 id="errorDiagTitle">Application Process Interrupted</h4>
-                  <span class="error-diag-code" id="errorDiagCode">ERROR</span>
-                </div>
-              </div>
-              <p class="error-diag-message" id="errorDiagMessage"></p>
-              <div class="error-diag-solution">
-                <strong>💡 Recommended Fix:</strong>
-                <span id="errorDiagSuggestion">Please verify the URL or try another company portal.</span>
-              </div>
-              <div class="error-diag-actions">
-                <button type="button" class="btn btn-secondary btn-sm" id="btnRetryApplication">🔄 Retry Application</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="btnDismissError">Dismiss</button>
+            <!-- Verification / OTP Section (Shown when OTP_REQUIRED or manual verification) -->
+            <div class="auth-gate-verify hidden" id="authGateVerifySection">
+              <div class="auth-gate-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btnResumeAuth">
+                  ✅ I've Completed Sign-In / Verified Code - Continue
+                </button>
               </div>
             </div>
+          </div>
 
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" id="sessionProgressBar" style="width: 0%"></div>
+          <!-- Error Diagnostic Box (shown when session fails) -->
+          <div class="error-diag-card hidden" id="errorDiagnosticCard">
+            <div class="error-diag-header">
+              <span class="error-diag-icon">🚨</span>
+              <div class="error-diag-titles">
+                <h4 id="errorDiagTitle">Application Process Interrupted</h4>
+                <span class="error-diag-code" id="errorDiagCode">ERROR</span>
+              </div>
             </div>
+            <p class="error-diag-message" id="errorDiagMessage"></p>
+            <div class="error-diag-solution">
+              <strong>💡 Recommended Fix:</strong>
+              <span id="errorDiagSuggestion">Please verify the URL or try another company portal.</span>
+            </div>
+            <div class="error-diag-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnRetryApplication">🔄 Retry Application</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnDismissError">Dismiss</button>
+            </div>
+          </div>
 
-            <!-- Terminal Logs Header & Controls -->
-            <div class="terminal-logs-header">
-              <span class="terminal-title">LIVE EXECUTION TIMELINE</span>
-              <span class="terminal-count" id="terminalLogCount">0 events</span>
-            </div>
+          <!-- Progress Bar -->
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="sessionProgressBar" style="width: 0%"></div>
+          </div>
 
-            <!-- Terminal Logs -->
-            <div class="terminal-logs" id="terminalLogs">
-              <div class="log-entry log-info"><span class="log-chip chip-info">INFO</span> [Agent System] Ready. Enter a job URL above to start.</div>
-            </div>
+          <!-- Terminal Logs Header & Timeline -->
+          <div class="terminal-logs-header">
+            <span class="terminal-title">LIVE EXECUTION TIMELINE</span>
+            <span class="terminal-count" id="terminalLogCount">0 events</span>
+          </div>
+
+          <!-- Terminal Logs -->
+          <div class="terminal-logs" id="terminalLogs">
+            <div class="log-entry log-info"><span class="log-chip chip-info">INFO</span> [Agent System] Ready. Enter a job URL above to start.</div>
           </div>
         </div>
 
@@ -323,337 +358,338 @@
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- ================= TAB 2: AUTONOMOUS JOB DISCOVERY RADAR ================= -->
-      <section class="tab-panel" id="tab-matcher">
-        <div class="panel-header">
-          <h2>Autonomous Job Discovery Radar</h2>
-          <p>The agent autonomously discovers top IT and product companies actively recruiting freshers and junior software engineers in India. No need to manually hunt for career links—click scan to see hiring portals and auto-apply.</p>
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: AUTONOMOUS JOB DISCOVERY RADAR ================= -->
+    <section class="tab-panel" id="tab-matcher">
+      <div class="panel-header">
+        <h2>Autonomous Job Discovery Radar</h2>
+        <p>The agent discovers top IT and product companies actively recruiting 2028 freshers and junior software engineers in India. Click auto-scan to inspect hiring portals and auto-apply.</p>
+      </div>
+
+      <!-- Radar Discovery Controls -->
+      <div class="card glass-card" style="margin-bottom: 2rem;">
+        <div class="card-title">
+          <span class="icon">📡</span> Auto-Discover Active Hiring Portals
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="radarRoleQuery">Target Role / Keywords</label>
+            <input type="text" id="radarRoleQuery" placeholder="Software Engineer (Fresher / 0-1 YOE)">
+          </div>
+          <div class="form-group flex-1">
+            <label for="radarLocationQuery">Location</label>
+            <input type="text" id="radarLocationQuery" placeholder="India (Pune, Bengaluru, Remote)">
+          </div>
+          <div class="form-group flex-btn">
+            <button type="button" class="btn btn-primary" id="btnDiscoverIndiaCompanies">
+              <span>⚡ Auto-Scan Hiring Companies</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Radar Discovery Controls -->
-        <div class="card glass-card" style="margin-bottom: 2rem;">
-          <div class="card-title">
-            <span class="icon">📡</span> Auto-Discover Active Hiring Portals
-          </div>
-          <div class="form-row">
-            <div class="form-group flex-2">
-              <label for="radarRoleQuery">Target Role / Keywords</label>
-              <input type="text" id="radarRoleQuery" placeholder="Software Engineer (Fresher / 0-1 YOE)">
-            </div>
-            <div class="form-group flex-1">
-              <label for="radarLocationQuery">Location</label>
-              <input type="text" id="radarLocationQuery" placeholder="India (Pune, Bengaluru, Remote)">
-            </div>
-            <div class="form-group flex-btn">
-              <button type="button" class="btn btn-primary" id="btnDiscoverIndiaCompanies">
-                <span>⚡ Auto-Scan Hiring Companies</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Discovered Companies Live Grid -->
-          <div class="radar-companies-grid" id="discoveredCompaniesGrid">
-            <!-- Dynamically populated with hiring companies in India -->
-          </div>
-
-          <!-- Collapsible Specific URL Scanner -->
-          <details class="override-details" style="margin-top: 1.5rem;">
-            <summary>Want to scan a specific custom career portal URL instead?</summary>
-            <form id="matcherForm" class="matcher-form" style="margin-top: 1rem;">
-              <div class="form-row">
-                <div class="form-group flex-2">
-                  <label for="matcherCareersUrl">Specific Career Portal URL</label>
-                  <input type="url" id="matcherCareersUrl" placeholder="https://www.accenture.com/in-en/careers/jobsearch or https://careers.rakuten.com">
-                </div>
-                <div class="form-group flex-1">
-                  <label for="matcherRoleQuery">Role Keyword Filter</label>
-                  <input type="text" id="matcherRoleQuery" placeholder="Associate Software Engineer">
-                </div>
-                <div class="form-group flex-btn">
-                  <button type="submit" class="btn btn-primary" id="searchRolesBtn">
-                    <span>🔍 Crawl Portal DOM</span>
-                  </button>
-                </div>
-              </div>
-            </form>
-          </details>
-
-          <!-- Live Scraped Openings Result -->
-          <div class="roles-results" id="rolesResults" style="margin-top: 1.5rem;">
-            <div class="empty-state">Click "Auto-Scan Hiring Companies" above or enter a portal link to crawl real job openings.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 3: MULTI-RESUME & KNOWLEDGE ================= -->
-      <section class="tab-panel" id="tab-resume">
-        <div class="panel-header">
-          <h2>Multi-Resume Manager & Knowledge Base</h2>
-          <p>Upload and manage multiple resumes (e.g. Full-Stack vs. Backend/Go). Switch active resumes anytime—the agent automatically uses the active resume for applications and question answering.</p>
+        <!-- Discovered Companies Live Grid -->
+        <div class="radar-companies-grid" id="discoveredCompaniesGrid">
+          <!-- Dynamically populated with hiring companies in India -->
         </div>
 
-        <div class="resume-grid">
-          <!-- Upload Area & Resumes List -->
-          <div class="card glass-card">
-            <div class="card-title">
-              <span class="icon">📤</span> Upload Resume (PDF)
-            </div>
-
-            <div class="dropzone" id="resumeDropzone">
-              <div class="drop-icon">📄</div>
-              <h4>Drag & drop your resume PDF here</h4>
-              <p>or click to browse from your computer</p>
-              <input type="file" id="resumeFileInput" accept=".pdf" style="display:none">
-              <span class="file-status" id="uploadStatusText"></span>
-            </div>
-
-            <!-- Uploaded Resumes Switcher -->
-            <div class="uploaded-resumes-section" style="margin-top: 1.8rem;">
-              <h4 style="font-size: 0.95rem; margin-bottom: 0.8rem; color: #cbd5e1;">Your Resumes (Select Active Resume)</h4>
-              <div class="resumes-list" id="resumesListContainer">
-                <!-- Dynamically populated resume cards with active switch -->
+        <!-- Collapsible Specific URL Scanner -->
+        <details class="override-details" style="margin-top: 1.5rem;">
+          <summary>Want to scan a specific custom career portal URL instead?</summary>
+          <form id="matcherForm" class="matcher-form" style="margin-top: 1rem;">
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="matcherCareersUrl">Specific Career Portal URL</label>
+                <input type="url" id="matcherCareersUrl" placeholder="https://www.accenture.com/in-en/careers/jobsearch or https://careers.rakuten.com">
+              </div>
+              <div class="form-group flex-1">
+                <label for="matcherRoleQuery">Role Keyword Filter</label>
+                <input type="text" id="matcherRoleQuery" placeholder="Associate Software Engineer">
+              </div>
+              <div class="form-group flex-btn">
+                <button type="submit" class="btn btn-primary" id="searchRolesBtn">
+                  <span>🔍 Crawl Portal DOM</span>
+                </button>
               </div>
             </div>
-          </div>
+          </form>
+        </details>
 
-          <!-- Structured Knowledge Viewer -->
-          <div class="card glass-card">
-            <div class="card-title">
-              <span class="icon">🧠</span> Extracted Candidate Knowledge
-            </div>
-
-            <div class="resume-preview-tabs">
-              <div class="preview-section">
-                <h4>Skills & Technologies</h4>
-                <div class="tags-container" id="skillsContainer">
-                  <span class="placeholder-text">Upload a resume to preview skills</span>
-                </div>
-              </div>
-
-              <div class="preview-section">
-                <h4>Education</h4>
-                <div id="educationContainer" class="list-cards">
-                  <span class="placeholder-text">Upload a resume to preview education</span>
-                </div>
-              </div>
-
-              <div class="preview-section">
-                <h4>Projects & Work Highlights</h4>
-                <div id="projectsContainer" class="list-cards">
-                  <span class="placeholder-text">Upload a resume to preview projects</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- Live Scraped Openings Result -->
+        <div class="roles-results" id="rolesResults" style="margin-top: 1.5rem;">
+          <div class="empty-state">Click "Auto-Scan Hiring Companies" above or enter a portal link to crawl real job openings.</div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ================= TAB 4: PROFILE & FALLBACKS ================= -->
-      <section class="tab-panel" id="tab-profile">
-        <div class="panel-header">
-          <h2>Personal Profile & Fallback Questionnaire</h2>
-          <p>Tricky enterprise forms (like Rakuten & Workday) ask about birth dates, notice periods, and sponsorship. Fill this once so your agent answers with 100% truthfulness.</p>
-        </div>
+    <!-- ================= TAB 3: MULTI-RESUME & KNOWLEDGE ================= -->
+    <section class="tab-panel" id="tab-resume">
+      <div class="panel-header">
+        <h2>Multi-Resume Manager & Knowledge Base</h2>
+        <p>Upload and manage multiple resumes. Switch active resumes anytime—the agent automatically uses the active resume for applications and question answering.</p>
+      </div>
 
+      <div class="resume-grid">
+        <!-- Upload Area & Resumes List -->
         <div class="card glass-card">
-          <form id="profileForm">
-            <!-- SECTION 1: AUTO-EXTRACTED FROM RESUME -->
-            <div class="resume-extracted-banner">
-              <div class="banner-title">
-                <span class="badge badge-success">✨ AUTO-EXTRACTED FROM RESUME</span>
-                <p>The agent automatically retrieves these directly from your uploaded resume. You do <strong>not</strong> need to type them manually!</p>
-              </div>
+          <div class="card-title">
+            <span class="icon">📤</span> Upload Resume (PDF)
+          </div>
 
-              <div class="extracted-fields-grid">
-                <div class="extracted-pill">
-                  <span class="pill-label">Full Name:</span>
-                  <span class="pill-value" id="displayFullName">Extracted from resume</span>
-                </div>
-                <div class="extracted-pill">
-                  <span class="pill-label">Email:</span>
-                  <span class="pill-value" id="displayEmail">Extracted from resume</span>
-                </div>
-                <div class="extracted-pill">
-                  <span class="pill-label">Phone:</span>
-                  <span class="pill-value" id="displayPhone">Extracted from resume</span>
-                </div>
-                <div class="extracted-pill">
-                  <span class="pill-label">LinkedIn:</span>
-                  <span class="pill-value" id="displayLinkedin">Extracted from resume</span>
-                </div>
-                <div class="extracted-pill">
-                  <span class="pill-label">GitHub:</span>
-                  <span class="pill-value" id="displayGithub">Extracted from resume</span>
-                </div>
-                <div class="extracted-pill">
-                  <span class="pill-label">Portfolio:</span>
-                  <span class="pill-value" id="displayPortfolio">Extracted from resume</span>
-                </div>
-              </div>
+          <div class="dropzone" id="resumeDropzone">
+            <div class="drop-icon">📄</div>
+            <h4>Drag & drop your resume PDF here</h4>
+            <p>or click to browse from your computer</p>
+            <input type="file" id="resumeFileInput" accept=".pdf" style="display:none">
+            <span class="file-status" id="uploadStatusText"></span>
+          </div>
 
-              <!-- Collapsible Manual Override Form (Hidden by default) -->
-              <details class="override-details">
-                <summary>Need to edit or override resume contact info?</summary>
-                <div class="form-row" style="margin-top: 1rem;">
-                  <div class="form-group">
-                    <label for="fullName">Full Name</label>
-                    <input type="text" id="fullName">
-                  </div>
-                  <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email">
-                  </div>
-                  <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="linkedinUrl">LinkedIn URL</label>
-                    <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/username">
-                  </div>
-                  <div class="form-group">
-                    <label for="githubUrl">GitHub URL</label>
-                    <input type="url" id="githubUrl" placeholder="https://github.com/username">
-                  </div>
-                  <div class="form-group">
-                    <label for="portfolioUrl">Portfolio / Website</label>
-                    <input type="url" id="portfolioUrl" placeholder="https://myportfolio.dev">
-                  </div>
+          <!-- Uploaded Resumes Switcher -->
+          <div class="uploaded-resumes-section" style="margin-top: 1.8rem;">
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.8rem; color: #cbd5e1;">Your Resumes (Select Active Resume)</h4>
+            <div class="resumes-list" id="resumesListContainer">
+              <!-- Dynamically populated resume cards with active switch -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Structured Knowledge Viewer -->
+        <div class="card glass-card">
+          <div class="card-title">
+            <span class="icon">🧠</span> Extracted Candidate Knowledge
+          </div>
+
+          <div class="resume-preview-tabs">
+            <div class="preview-section">
+              <h4>Skills & Technologies</h4>
+              <div class="tags-container" id="skillsContainer">
+                <span class="placeholder-text">Upload a resume to preview skills</span>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <h4>Education</h4>
+              <div id="educationContainer" class="list-cards">
+                <span class="placeholder-text">Upload a resume to preview education</span>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <h4>Projects & Work Highlights</h4>
+              <div id="projectsContainer" class="list-cards">
+                <span class="placeholder-text">Upload a resume to preview projects</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: PROFILE & FALLBACKS ================= -->
+    <section class="tab-panel" id="tab-profile">
+      <div class="panel-header">
+        <h2>Personal Profile & Fallback Questionnaire</h2>
+        <p>Enterprise forms (Rakuten, Workday, Taleo) ask about birth dates, notice periods, and work authorization. Save this once so your agent answers truthfully.</p>
+      </div>
+
+      <div class="card glass-card">
+        <form id="profileForm">
+          <!-- SECTION 1: AUTO-EXTRACTED FROM RESUME -->
+          <div class="resume-extracted-banner">
+            <div class="banner-title">
+              <span class="badge badge-success">✨ AUTO-EXTRACTED FROM RESUME</span>
+              <p>The agent retrieves these directly from your active resume.</p>
+            </div>
+
+            <div class="extracted-fields-grid">
+              <div class="extracted-pill">
+                <span class="pill-label">Full Name:</span>
+                <span class="pill-value" id="displayFullName">Extracted from resume</span>
+              </div>
+              <div class="extracted-pill">
+                <span class="pill-label">Email:</span>
+                <span class="pill-value" id="displayEmail">shivamvishwa844@gmail.com</span>
+              </div>
+              <div class="extracted-pill">
+                <span class="pill-label">Phone:</span>
+                <span class="pill-value" id="displayPhone">Extracted from resume</span>
+              </div>
+              <div class="extracted-pill">
+                <span class="pill-label">LinkedIn:</span>
+                <span class="pill-value" id="displayLinkedin">Extracted from resume</span>
+              </div>
+              <div class="extracted-pill">
+                <span class="pill-label">GitHub:</span>
+                <span class="pill-value" id="displayGithub">Extracted from resume</span>
+              </div>
+              <div class="extracted-pill">
+                <span class="pill-label">Portfolio:</span>
+                <span class="pill-value" id="displayPortfolio">Extracted from resume</span>
+              </div>
+            </div>
+
+            <!-- Collapsible Manual Override Form (Hidden by default) -->
+            <details class="override-details">
+              <summary>Need to edit or override resume contact info?</summary>
+              <div class="form-row" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label for="fullName">Full Name</label>
+                  <input type="text" id="fullName">
                 </div>
                 <div class="form-group">
-                  <label for="currentCity">Current City & State</label>
-                  <input type="text" id="currentCity" placeholder="City, State">
+                  <label for="email">Email</label>
+                  <input type="email" id="email">
                 </div>
-              </details>
-            </div>
-
-            <!-- SECTION 2: REQUIRED FALLBACKS NOT IN RESUME -->
-            <h3 class="section-heading" style="margin-top: 2rem;">Required Fallbacks (Information NOT in Resumes)</h3>
-            <p class="section-subtext">Company portals (like Rakuten, Workday, Taleo) ask about birth dates, notice periods, and work authorization. Fill these once below so your agent answers with 100% truthfulness.</p>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="dateOfBirth">Date of Birth <span class="req">*</span></label>
-                <input type="date" id="dateOfBirth" required>
+                <div class="form-group">
+                  <label for="phone">Phone Number</label>
+                  <input type="tel" id="phone">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="linkedinUrl">LinkedIn URL</label>
+                  <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/username">
+                </div>
+                <div class="form-group">
+                  <label for="githubUrl">GitHub URL</label>
+                  <input type="url" id="githubUrl" placeholder="https://github.com/username">
+                </div>
+                <div class="form-group">
+                  <label for="portfolioUrl">Portfolio / Website</label>
+                  <input type="url" id="portfolioUrl" placeholder="https://myportfolio.dev">
+                </div>
               </div>
               <div class="form-group">
-                <label for="gender">Gender</label>
-                <select id="gender">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Non-binary">Non-binary</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
+                <label for="currentCity">Current City & State</label>
+                <input type="text" id="currentCity" placeholder="City, State">
               </div>
-            </div>
-
-            <h3 class="section-heading">Preferences & Eligibility (Crucial for ATS)</h3>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="experienceLevel">Experience Level</label>
-                <select id="experienceLevel">
-                  <option value="Fresher (0-1 YOE)">Fresher (0-1 YOE)</option>
-                  <option value="Junior (1-3 YOE)">Junior (1-3 YOE)</option>
-                  <option value="Mid-Level (3-5 YOE)">Mid-Level (3-5 YOE)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="noticePeriodDays">Notice Period</label>
-                <select id="noticePeriodDays">
-                  <option value="0">Immediate Joiner (0 days)</option>
-                  <option value="15">15 Days</option>
-                  <option value="30">30 Days</option>
-                  <option value="60">60 Days</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="requiresSponsorship">Requires Visa Sponsorship?</label>
-                <select id="requiresSponsorship">
-                  <option value="false">No (Authorized to work)</option>
-                  <option value="true">Yes (Require sponsorship)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="willingToRelocate">Willing to Relocate?</label>
-                <select id="willingToRelocate">
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="remotePreference">Workplace Preference</label>
-                <select id="remotePreference">
-                  <option value="Flexible">Flexible (Remote, Hybrid or Onsite)</option>
-                  <option value="Remote">Remote Only</option>
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="Onsite">Onsite</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="preferredRoles">Preferred Roles (Comma-separated)</label>
-                <input type="text" id="preferredRoles" placeholder="Software Engineer, Frontend Developer, Full Stack Developer">
-              </div>
-            </div>
-
-            <h3 class="section-heading" style="margin-top: 1.5rem;">Job Portal & Workday Credentials</h3>
-            <p class="section-subtext">The email and default password used by your agent when creating accounts or signing into company portals (Workday, Taleo, etc.).</p>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="credAccountEmail">Portal Login Email</label>
-                <input type="email" id="credAccountEmail" value="shivamvishwa844@gmail.com">
-              </div>
-              <div class="form-group">
-                <label for="credDefaultPassword">Default Portal Password <span class="text-muted">(Optional - agent will prompt if left blank)</span></label>
-                <input type="password" id="credDefaultPassword" placeholder="e.g. Shivam#2028">
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" id="saveProfileBtn">
-                💾 Save Profile & Fallbacks
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- ================= TAB 5: API KEY FAILOVER POOL ================= -->
-      <section class="tab-panel" id="tab-apikeys">
-        <div class="panel-header">
-          <h2>Google Gemini Multi-API Key Failover Pool</h2>
-          <p>Add 1, 2, 3 or more free Google Gemini API keys. If one key hits the rate limit (HTTP 429), the agent automatically rotates to the next key without dropping context or crashing.</p>
-        </div>
-
-        <div class="card glass-card">
-          <div class="card-title">
-            <span class="icon">➕</span> Add Gemini API Keys (Single or Batch)
+            </details>
           </div>
-          <form id="addApiKeyForm" class="key-add-form">
+
+          <!-- SECTION 2: REQUIRED FALLBACKS NOT IN RESUME -->
+          <h3 class="section-heading" style="margin-top: 2rem;">Required Fallbacks (Information NOT in Resumes)</h3>
+          <p class="section-subtext">Company portals ask about birth dates, notice periods, and work authorization. Fill these once below so your agent answers with 100% truthfulness.</p>
+          <div class="form-row">
             <div class="form-group">
-              <label for="newApiKeyInput">Paste 1 or Multiple Gemini API Keys (Separated by commas, spaces, or new lines)</label>
-              <textarea id="newApiKeyInput" rows="3" placeholder="Paste all your keys at once:&#10;AIzaSyA123...&#10;AIzaSyB456...&#10;AIzaSyC789..." required style="resize: vertical; font-family: monospace; font-size: 0.88rem;"></textarea>
+              <label for="dateOfBirth">Date of Birth <span class="req">*</span></label>
+              <input type="date" id="dateOfBirth" required>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.8rem 1.8rem;">
-              ➕ Add All Keys to Pool
-            </button>
-            <small class="helper-text" style="margin-top: 0.8rem;">💡 Get 100% free API keys from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. You can paste keys from different Google accounts for unlimited failover applications!</small>
-          </form>
-
-          <h3 class="section-heading" style="margin-top: 2rem;">Active API Keys in Pool</h3>
-          <div class="api-keys-list" id="apiKeysList">
-            <!-- Dynamically populated -->
+            <div class="form-group">
+              <label for="gender">Gender</label>
+              <select id="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-binary">Non-binary</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
           </div>
-        </div>
-      </section>
 
-    </main>
-  </div>
+          <h3 class="section-heading">Preferences & Eligibility (Crucial for ATS)</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="experienceLevel">Experience Level</label>
+              <select id="experienceLevel">
+                <option value="Fresher (0-1 YOE)">Fresher (0-1 YOE)</option>
+                <option value="Junior (1-3 YOE)">Junior (1-3 YOE)</option>
+                <option value="Mid-Level (3-5 YOE)">Mid-Level (3-5 YOE)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="noticePeriodDays">Notice Period</label>
+              <select id="noticePeriodDays">
+                <option value="0">Immediate Joiner (0 days)</option>
+                <option value="15">15 Days</option>
+                <option value="30">30 Days</option>
+                <option value="60">60 Days</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="requiresSponsorship">Requires Visa Sponsorship?</label>
+              <select id="requiresSponsorship">
+                <option value="false">No (Authorized to work)</option>
+                <option value="true">Yes (Require sponsorship)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="willingToRelocate">Willing to Relocate?</label>
+              <select id="willingToRelocate">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="remotePreference">Workplace Preference</label>
+              <select id="remotePreference">
+                <option value="Flexible">Flexible (Remote, Hybrid or Onsite)</option>
+                <option value="Remote">Remote Only</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Onsite">Onsite</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="preferredRoles">Preferred Roles (Comma-separated)</label>
+              <input type="text" id="preferredRoles" placeholder="Software Engineer, Frontend Developer, Full Stack Developer">
+            </div>
+          </div>
+
+          <h3 class="section-heading" style="margin-top: 1.5rem;">Job Portal & Workday Credentials</h3>
+          <p class="section-subtext">The email and default password used by your agent when creating accounts or signing into company portals (Workday, Taleo, etc.).</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="credAccountEmail">Portal Login Email</label>
+              <input type="email" id="credAccountEmail" value="shivamvishwa844@gmail.com">
+            </div>
+            <div class="form-group">
+              <label for="credDefaultPassword">Default Portal Password <span class="text-muted">(Optional - agent will prompt if left blank)</span></label>
+              <input type="password" id="credDefaultPassword" placeholder="e.g. Shivam#2028">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+              💾 Save Profile & Fallbacks
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= TAB 5: API KEY FAILOVER POOL ================= -->
+    <section class="tab-panel" id="tab-apikeys">
+      <div class="panel-header">
+        <h2>Google Gemini Multi-API Key Failover Pool</h2>
+        <p>Add 1, 2, 3 or more free Google Gemini API keys. If one key hits the rate limit (HTTP 429), the agent rotates to the next key without dropping context or crashing.</p>
+      </div>
+
+      <div class="card glass-card">
+        <div class="card-title">
+          <span class="icon">➕</span> Add Gemini API Keys (Single or Batch)
+        </div>
+        <form id="addApiKeyForm" class="key-add-form">
+          <div class="form-group">
+            <label for="newApiKeyInput">Paste 1 or Multiple Gemini API Keys (Separated by commas, spaces, or new lines)</label>
+            <textarea id="newApiKeyInput" rows="3" placeholder="Paste all your keys at once:&#10;AIzaSyA123...&#10;AIzaSyB456...&#10;AIzaSyC789..." required style="resize: vertical; font-family: monospace; font-size: 0.88rem;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.8rem 1.8rem;">
+            ➕ Add All Keys to Pool
+          </button>
+          <small class="helper-text" style="margin-top: 0.8rem;">💡 Get 100% free API keys from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. You can paste keys from different Google accounts for unlimited failover applications!</small>
+        </form>
+
+        <h3 class="section-heading" style="margin-top: 2rem;">Active API Keys in Pool</h3>
+        <div class="api-keys-list" id="apiKeysList">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+  </main>
 
   <script src="app.js"></script>
 </body>
