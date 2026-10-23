@@ -1426,6 +1426,54 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, '&#039;');
   }
 
+  // Reset Browser Cookies & Stale Identity Session
+  async function handleResetBrowserSession() {
+    if (!confirm('This will clear persistent cookies and cached sessions for employer portals (fixing "You already have an active session" errors). Proceed?')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/session/reset-browser', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('Browser cookies and session storage successfully reset! You can now launch your application fresh.');
+        const diagCard = document.getElementById('errorDiagnosticCard');
+        if (diagCard) diagCard.classList.add('hidden');
+      } else {
+        alert('Notice: ' + (data.message || 'Reset completed'));
+      }
+    } catch (err) {
+      alert('Error resetting browser session: ' + err.message);
+    }
+  }
+
+  const btnHeaderReset = document.getElementById('btnHeaderResetSession');
+  if (btnHeaderReset) {
+    btnHeaderReset.addEventListener('click', handleResetBrowserSession);
+  }
+
+  const btnDiagReset = document.getElementById('btnDiagResetSession');
+  if (btnDiagReset) {
+    btnDiagReset.addEventListener('click', handleResetBrowserSession);
+  }
+
+  const btnDismiss = document.getElementById('btnDismissError');
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', () => {
+      const diagCard = document.getElementById('errorDiagnosticCard');
+      if (diagCard) diagCard.classList.add('hidden');
+    });
+  }
+
+  const btnRetry = document.getElementById('btnRetryApplication');
+  if (btnRetry) {
+    btnRetry.addEventListener('click', () => {
+      const diagCard = document.getElementById('errorDiagnosticCard');
+      if (diagCard) diagCard.classList.add('hidden');
+      const startBtn = document.getElementById('startApplyBtn');
+      if (startBtn) startBtn.click();
+    });
+  }
+
   // ==================== Initialize Application on Load ====================
   loadProfile();
   loadResumes();
