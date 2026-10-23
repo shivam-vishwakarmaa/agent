@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (session.status === 'CANCELLED') {
+    if (!isRunning) {
       startApplyBtn.disabled = false;
       startApplyBtn.innerHTML = '<span class="action-arrow">→</span>';
       if (radarPulseEffect) radarPulseEffect.classList.remove('active');
@@ -470,9 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. Handle Review Mode Pause
     if (session.status === 'WAITING_FOR_REVIEW') {
-      startApplyBtn.disabled = false;
-      startApplyBtn.innerHTML = '<span class="btn-icon">⚡</span> Launch Application Agent';
-
       reviewContainer.classList.remove('hidden');
       renderReviewFields(session.fieldsFilled || []);
 
@@ -480,9 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (latestScreenshot) {
         reviewScreenshotImg.src = `/screenshots/${latestScreenshot}`;
       }
-    } else if (session.status === 'COMPLETED' || session.status === 'FAILED') {
-      startApplyBtn.disabled = false;
-      startApplyBtn.innerHTML = '<span class="btn-icon">⚡</span> Launch Application Agent';
     }
 
     // 7. Update Proof Snapshots Gallery if new snapshots arrived
