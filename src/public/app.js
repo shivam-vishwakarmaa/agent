@@ -437,9 +437,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (details.message && authGateDesc) authGateDesc.textContent = details.message;
         if (details.email && authEmailInput) authEmailInput.value = details.email;
 
-        if (details.reason === 'NEED_PASSWORD' || details.action === 'CREATE_ACCOUNT') {
+        if (details.reason === 'NEED_PASSWORD' || details.action === 'CREATE_ACCOUNT' || details.action === 'SIGN_IN') {
           if (authGateFormSection) authGateFormSection.classList.remove('hidden');
           if (authGateVerifySection) authGateVerifySection.classList.add('hidden');
+          if (btnSubmitAuthCredentials) {
+            btnSubmitAuthCredentials.innerHTML = details.action === 'SIGN_IN'
+              ? '🔑 Sign In & Proceed Application'
+              : '🚀 Create Account & Proceed Application';
+          }
         } else {
           if (authGateFormSection) authGateFormSection.classList.add('hidden');
           if (authGateVerifySection) authGateVerifySection.classList.remove('hidden');
