@@ -1106,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('phone')) document.getElementById('phone').value = p.phone || '';
       if (document.getElementById('dateOfBirth')) document.getElementById('dateOfBirth').value = p.dateOfBirth || '';
       if (document.getElementById('gender')) document.getElementById('gender').value = p.gender || 'Prefer not to say';
+      if (document.getElementById('panCard')) document.getElementById('panCard').value = p.panCard || '';
       if (document.getElementById('currentCity')) document.getElementById('currentCity').value = p.currentCity || '';
       if (document.getElementById('linkedinUrl')) document.getElementById('linkedinUrl').value = p.linkedinUrl || '';
       if (document.getElementById('githubUrl')) document.getElementById('githubUrl').value = p.githubUrl || '';
@@ -1151,6 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         phone: document.getElementById('phone').value.trim(),
         dateOfBirth: document.getElementById('dateOfBirth').value.trim(),
         gender: document.getElementById('gender').value,
+        panCard: document.getElementById('panCard') ? document.getElementById('panCard').value.trim().toUpperCase() : '',
         currentCity: document.getElementById('currentCity').value.trim(),
         linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
         githubUrl: document.getElementById('githubUrl').value.trim(),
