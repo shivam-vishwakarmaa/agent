@@ -54,6 +54,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const reviewScreenshotImg = document.getElementById('reviewScreenshotImg');
   const approveSubmitBtn = document.getElementById('approveSubmitBtn');
 
+  // Live Agent Hero & Stepper Elements
+  const heroActionChip = document.getElementById('heroActionChip');
+  const heroPlatformChip = document.getElementById('heroPlatformChip');
+  const heroStepChip = document.getElementById('heroStepChip');
+  const heroActionTitle = document.getElementById('heroActionTitle');
+  const heroActionDetail = document.getElementById('heroActionDetail');
+  const heroRadarEmoji = document.getElementById('heroRadarEmoji');
+  const radarPulseEffect = document.getElementById('radarPulseEffect');
+
+  const errorDiagnosticCard = document.getElementById('errorDiagnosticCard');
+  const errorDiagTitle = document.getElementById('errorDiagTitle');
+  const errorDiagCode = document.getElementById('errorDiagCode');
+  const errorDiagMessage = document.getElementById('errorDiagMessage');
+  const errorDiagSuggestion = document.getElementById('errorDiagSuggestion');
+  const btnRetryApplication = document.getElementById('btnRetryApplication');
+  const btnDismissError = document.getElementById('btnDismissError');
+
+  const terminalLogCount = document.getElementById('terminalLogCount');
+  const headerLiveActivity = document.getElementById('headerLiveActivity');
+  const headerLiveText = document.getElementById('headerLiveText');
+
+  if (btnRetryApplication) {
+    btnRetryApplication.addEventListener('click', () => {
+      if (errorDiagnosticCard) errorDiagnosticCard.classList.add('hidden');
+      if (applyForm) {
+        applyForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+
+  if (btnDismissError) {
+    btnDismissError.addEventListener('click', () => {
+      if (errorDiagnosticCard) errorDiagnosticCard.classList.add('hidden');
+    });
+  }
+
   applyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const jobUrl = document.getElementById('targetJobUrl').value.trim();
@@ -66,6 +102,21 @@ document.addEventListener('DOMContentLoaded', () => {
     startApplyBtn.disabled = true;
     startApplyBtn.innerHTML = '<span>⏳ Agent Initializing...</span>';
     reviewContainer.classList.add('hidden');
+    if (errorDiagnosticCard) errorDiagnosticCard.classList.add('hidden');
+
+    // Reset live terminal
+    terminalLogs.innerHTML = '';
+    lastLogCount = 0;
+
+    // Immediately reflect active status in Hero Card & Stepper
+    if (heroActionTitle) heroActionTitle.textContent = `Connecting to ${companyName || 'Career Portal'}...`;
+    if (heroActionDetail) heroActionDetail.textContent = `Launching browser and navigating to ${jobUrl.slice(0, 70)}...`;
+    if (heroActionChip) {
+      heroActionChip.textContent = 'STATUS: INITIALIZING';
+      heroActionChip.className = 'hero-tag tag-active';
+    }
+    if (radarPulseEffect) radarPulseEffect.classList.add('active');
+    updatePipelineStepper({ pipelineStep: 1, status: 'INITIALIZING' });
 
     try {
       const res = await fetch('/api/apply/start', {
@@ -76,7 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start agent');
 
-      appendLog(`[Agent] Application process initiated in ${mode.toUpperCase()} mode.`, 'agent');
+      appendLog({
+        timestamp: new Date().toLocaleTimeString(),
+        type: 'agent',
+        actionTag: 'NAVIGATE',
+        message: `Application launched in ${mode.toUpperCase()} mode for ${companyName || 'Target Company'}.`
+      });
     } catch (err) {
       alert(`Error starting agent: ${err.message}`);
       startApplyBtn.disabled = false;
@@ -91,7 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/session/approve', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        appendLog('[User Approval] Final submission approved!', 'success');
+        appendLog({
+          timestamp: new Date().toLocaleTimeString(),
+          type: 'success',
+          actionTag: 'SUCCESS',
+          message: 'User approved! Final submission in progress...'
+        });
         reviewContainer.classList.add('hidden');
       } else {
         alert(data.message || 'Approval failed');
@@ -114,10 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateSessionUI(session);
       } catch (err) {}
-    }, 1500);
+    }, 1200);
   }
 
+  window.updateSessionUI = updateSessionUI;
+
   function updateSessionUI(session) {
+    if (!session) return;
+
     sessionStatusBadge.textContent = session.status || 'IDLE';
     sessionStatusBadge.className = `badge ${getStatusBadgeClass(session.status)}`;
 
@@ -134,16 +199,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     sessionProgressBar.style.width = `${progressMap[session.status] || 0}%`;
 
-    // Append new logs
+    // 1. Update Hero Status Card
+    updateHeroStatusCard(session);
+
+    // 2. Update 5-Step Pipeline
+    updatePipelineStepper(session);
+
+    // 3. Update Error Diagnostic Box
+    updateErrorDiagnostic(session);
+
+    // 4. Update Header Live Pill
+    updateHeaderLiveActivity(session);
+
+    // 5. Append new logs
     if (session.logs && session.logs.length > lastLogCount) {
       for (let i = lastLogCount; i < session.logs.length; i++) {
-        const l = session.logs[i];
-        appendLog(`[${l.timestamp}] ${l.message}`, l.type);
+        appendLog(session.logs[i]);
       }
       lastLogCount = session.logs.length;
     }
+    if (terminalLogCount) {
+      terminalLogCount.textContent = `${session.logs ? session.logs.length : 0} events`;
+    }
 
-    // Handle Review Mode Pause
+    // 6. Handle Review Mode Pause
     if (session.status === 'WAITING_FOR_REVIEW') {
       startApplyBtn.disabled = false;
       startApplyBtn.innerHTML = '<span class="btn-icon">⚡</span> Launch Application Agent';
@@ -161,6 +240,131 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function updateHeroStatusCard(session) {
+    const isRunning = ['INITIALIZING', 'NAVIGATING', 'ANALYZING', 'FILLING', 'SUBMITTING'].includes(session.status);
+    const isPaused = session.status === 'WAITING_FOR_REVIEW' || session.status === 'CAPTCHA_PAUSE';
+    const isFailed = session.status === 'FAILED';
+    const isComplete = session.status === 'COMPLETED';
+
+    // Pulse effect
+    if (radarPulseEffect) {
+      if (isRunning) {
+        radarPulseEffect.classList.add('active');
+      } else {
+        radarPulseEffect.classList.remove('active');
+      }
+    }
+
+    // Radar Emoji
+    if (heroRadarEmoji) {
+      if (isRunning) heroRadarEmoji.textContent = '⚡';
+      else if (isPaused) heroRadarEmoji.textContent = '🛑';
+      else if (isFailed) heroRadarEmoji.textContent = '❌';
+      else if (isComplete) heroRadarEmoji.textContent = '🎉';
+      else heroRadarEmoji.textContent = '🤖';
+    }
+
+    // Action Chip Tag
+    if (heroActionChip) {
+      heroActionChip.textContent = `STATUS: ${session.status || 'IDLE'}`;
+      heroActionChip.className = `hero-tag ${
+        isComplete ? 'tag-primary' :
+        isFailed ? 'tag-error' :
+        isPaused ? 'tag-warn' :
+        isRunning ? 'tag-active' : 'tag-muted'
+      }`;
+    }
+
+    // Platform Tag
+    if (heroPlatformChip) {
+      heroPlatformChip.textContent = `Platform: ${session.atsType || 'Auto-Detect'}`;
+    }
+
+    // Step Tag
+    if (heroStepChip) {
+      heroStepChip.textContent = `Step ${session.currentStep || 1} of ${session.totalStepsEstimated || 1}`;
+    }
+
+    // Hero Action Title & Detail
+    if (heroActionTitle) {
+      heroActionTitle.textContent = session.currentAction || (isComplete ? 'Application Completed' : 'Agent Ready');
+    }
+    if (heroActionDetail) {
+      heroActionDetail.textContent = session.currentActionDetail || (
+        isComplete ? 'Application has been successfully submitted.' :
+        isFailed ? (session.errorDetails?.message || 'Application process was interrupted.') :
+        'Ready to process application.'
+      );
+    }
+  }
+
+  function updatePipelineStepper(session) {
+    const pipeStep = session.pipelineStep || 1;
+    const isFailed = session.status === 'FAILED';
+    const isComplete = session.status === 'COMPLETED';
+
+    for (let i = 1; i <= 5; i++) {
+      const stepEl = document.getElementById(`pipeStep${i}`);
+      const lineEl = document.getElementById(`pipeLine${i}`);
+      if (!stepEl) continue;
+
+      stepEl.className = 'pipe-step';
+      if (isComplete) {
+        stepEl.classList.add('step-completed');
+      } else if (isFailed && i === pipeStep) {
+        stepEl.classList.add('step-failed');
+      } else if (i < pipeStep) {
+        stepEl.classList.add('step-completed');
+      } else if (i === pipeStep) {
+        stepEl.classList.add('step-active');
+      } else {
+        stepEl.classList.add('step-idle');
+      }
+
+      if (lineEl) {
+        lineEl.className = 'pipe-line';
+        if (isComplete || i < pipeStep) {
+          lineEl.classList.add('completed');
+        }
+      }
+    }
+  }
+
+  function updateErrorDiagnostic(session) {
+    if (!errorDiagnosticCard) return;
+
+    if (session.status === 'FAILED') {
+      const err = session.errorDetails || {
+        title: 'Application Process Interrupted',
+        message: 'An unexpected error occurred during execution.',
+        suggestion: 'Check the URL or try applying to a different portal.',
+        code: 'EXECUTION_ERROR'
+      };
+
+      if (errorDiagTitle) errorDiagTitle.textContent = err.title;
+      if (errorDiagCode) errorDiagCode.textContent = err.code || 'ERROR';
+      if (errorDiagMessage) errorDiagMessage.textContent = err.message;
+      if (errorDiagSuggestion) errorDiagSuggestion.textContent = err.suggestion;
+
+      errorDiagnosticCard.classList.remove('hidden');
+    } else {
+      errorDiagnosticCard.classList.add('hidden');
+    }
+  }
+
+  function updateHeaderLiveActivity(session) {
+    if (!headerLiveActivity) return;
+    const isRunning = ['INITIALIZING', 'NAVIGATING', 'ANALYZING', 'FILLING', 'SUBMITTING', 'WAITING_FOR_REVIEW'].includes(session.status);
+    if (isRunning) {
+      headerLiveActivity.classList.remove('hidden');
+      if (headerLiveText) {
+        headerLiveText.textContent = session.currentAction || 'Agent Working...';
+      }
+    } else {
+      headerLiveActivity.classList.add('hidden');
+    }
+  }
+
   function getStatusBadgeClass(status) {
     if (status === 'COMPLETED') return 'badge-success';
     if (status === 'WAITING_FOR_REVIEW' || status === 'CAPTCHA_PAUSE') return 'badge-warning';
@@ -168,10 +372,48 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
-  function appendLog(text, type = 'info') {
+  function appendLog(logItem) {
+    let text = '';
+    let type = 'info';
+    let actionTag = 'INFO';
+    let timestamp = '';
+
+    if (typeof logItem === 'string') {
+      text = logItem;
+      timestamp = new Date().toLocaleTimeString();
+    } else {
+      text = logItem.message || '';
+      type = logItem.type || 'info';
+      actionTag = logItem.actionTag || 'INFO';
+      timestamp = logItem.timestamp || new Date().toLocaleTimeString();
+    }
+
+    const tagIconMap = {
+      'NAVIGATE': '🌐',
+      'SCAN': '🔍',
+      'AI_THINK': '✨',
+      'AUTOFILL': '📝',
+      'ATTACH': '📎',
+      'SNAPSHOT': '📸',
+      'VERIFY': '🛡️',
+      'SUBMIT': '⚡',
+      'SUCCESS': '✅',
+      'ERROR': '❌',
+      'ALERT': '⚠️',
+      'INFO': 'ℹ️'
+    };
+
+    const icon = tagIconMap[actionTag] || 'ℹ️';
+    const chipClass = `chip-${actionTag.toLowerCase()}`;
+
     const entry = document.createElement('div');
     entry.className = `log-entry log-${type}`;
-    entry.textContent = text;
+    entry.innerHTML = `
+      <span class="log-chip ${chipClass}">${icon} ${actionTag}</span>
+      <span class="log-time">${escapeHtml(timestamp)}</span>
+      <span class="log-text">${escapeHtml(text)}</span>
+    `;
+
     terminalLogs.appendChild(entry);
     terminalLogs.scrollTop = terminalLogs.scrollHeight;
   }

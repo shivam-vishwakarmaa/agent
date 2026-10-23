@@ -6,6 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const { screenerQnA } = require('../ai/screenerQnA');
+const { sessionStore } = require('../state/sessionStore');
 
 class FormFiller {
   /**
@@ -26,12 +27,14 @@ class FormFiller {
       if (standardVal !== null) {
         const success = await this.fillSingleField(page, field, standardVal);
         if (success) {
+          const fieldLabel = field.label || field.name || 'Profile Field';
           filledSummary.push({
-            label: field.label || field.name,
+            label: fieldLabel,
             value: standardVal,
             type: field.type,
             selector: field.selector
           });
+          sessionStore.addSessionLog(`Autofilled "${fieldLabel}" ➔ "${standardVal}"`, 'info', 'AUTOFILL');
         }
       } else if (field.type === 'file') {
         // Handle resume file attachment
@@ -39,12 +42,14 @@ class FormFiller {
         if (resumePath && fs.existsSync(resumePath)) {
           try {
             await page.setInputFiles(field.selector, resumePath);
+            const fileName = path.basename(resumePath);
             filledSummary.push({
               label: field.label || 'Resume / CV Upload',
-              value: path.basename(resumePath),
+              value: fileName,
               type: 'file',
               selector: field.selector
             });
+            sessionStore.addSessionLog(`Attached candidate resume: "${fileName}"`, 'success', 'ATTACH');
             console.log(`[FormFiller] Attached resume: ${resumePath}`);
           } catch (err) {
             console.warn(`[FormFiller] Failed to attach resume to ${field.selector}:`, err.message);
@@ -58,6 +63,7 @@ class FormFiller {
 
     // Step 2: For unmapped/screener/multilingual questions, use ScreenerQnA
     if (unmappedFields.length > 0) {
+      sessionStore.addSessionLog(`Answering ${unmappedFields.length} custom screener questions with Gemini AI...`, 'agent', 'AI_THINK');
       console.log(`[FormFiller] Answering ${unmappedFields.length} custom screener questions with AI...`);
       const aiAnswers = await screenerQnA.answerQuestions(unmappedFields, jobContext);
 
@@ -66,13 +72,15 @@ class FormFiller {
         if (answer) {
           const success = await this.fillSingleField(page, field, answer);
           if (success) {
+            const qTitle = field.label || field.name || 'Screener Question';
             filledSummary.push({
-              label: field.label || field.name,
+              label: qTitle,
               value: answer,
               type: field.type,
               selector: field.selector,
               isAiGenerated: true
             });
+            sessionStore.addSessionLog(`✨ AI answered "${qTitle}" ➔ "${String(answer).slice(0, 50)}${String(answer).length > 50 ? '...' : ''}"`, 'agent', 'AI_THINK');
           }
         }
       }

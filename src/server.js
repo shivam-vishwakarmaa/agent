@@ -148,7 +148,13 @@ app.delete('/api/keys/:id', (req, res) => {
 
 app.get('/api/session/active', (req, res) => {
   const session = sessionStore.getActiveSession();
-  res.json(session || { status: 'IDLE', logs: [] });
+  res.json(session || {
+    status: 'IDLE',
+    currentAction: 'Agent Ready',
+    currentActionDetail: 'Enter a job or career portal URL and click "Launch Application Agent" to start.',
+    pipelineStep: 1,
+    logs: []
+  });
 });
 
 app.post('/api/apply/start', async (req, res) => {

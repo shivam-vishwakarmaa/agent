@@ -167,6 +167,38 @@ body {
   box-shadow: 0 0 8px var(--amber);
 }
 
+.agent-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 1rem;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid var(--cyan);
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #67e8f9;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+  animation: pulseGlow 2s infinite;
+}
+
+.dot-pulse {
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  animation: pulseDot 1.4s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 14px var(--cyan); }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { border-color: rgba(6, 182, 212, 0.5); }
+  50% { border-color: var(--cyan); box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
+}
+
 .mode-pill {
   font-size: 0.85rem;
   font-weight: 600;
@@ -550,31 +582,391 @@ input:focus, select:focus, textarea:focus {
   gap: 1.8rem;
 }
 
-/* Terminal Logs */
+/* ================= Agent Hero Status Card ================= */
+.agent-hero-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-hero-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--cyan), transparent);
+}
+
+.hero-radar-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.radar-emoji {
+  font-size: 1.6rem;
+  position: relative;
+  z-index: 2;
+}
+
+.radar-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radar-pulse.active {
+  animation: radarWave 2s infinite ease-out;
+}
+
+@keyframes radarWave {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.hero-details {
+  flex: 1;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.hero-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.hero-tag.tag-primary {
+  background: rgba(139, 92, 246, 0.25);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.hero-tag.tag-muted {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-tag.tag-active {
+  background: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
+  border: 1px solid var(--cyan);
+}
+
+.hero-tag.tag-error {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+
+.hero-tag.tag-warn {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.hero-action-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hero-action-detail {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+/* ================= 5-Step Execution Pipeline (Stepper) ================= */
+.pipeline-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.2rem;
+  background: rgba(11, 15, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+}
+
+.pipe-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.pipe-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.pipe-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.pipe-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 0.4rem;
+  margin-bottom: 1.2rem;
+  transition: all 0.4s ease;
+}
+
+.pipe-step.step-idle .pipe-circle {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+
+.pipe-step.step-active .pipe-circle {
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  border: 1px solid #fff;
+  color: #fff;
+  box-shadow: 0 0 15px var(--cyan);
+  animation: pulseStep 1.5s infinite;
+}
+
+@keyframes pulseStep {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--cyan); }
+  50% { transform: scale(1.12); box-shadow: 0 0 20px var(--cyan); }
+}
+
+.pipe-step.step-active .pipe-text {
+  color: #67e8f9;
+  font-weight: 700;
+}
+
+.pipe-step.step-completed .pipe-circle {
+  background: var(--emerald);
+  border: 1px solid var(--emerald);
+  color: #fff;
+}
+
+.pipe-step.step-completed .pipe-text {
+  color: #6ee7b7;
+}
+
+.pipe-step.step-failed .pipe-circle {
+  background: var(--rose);
+  border: 1px solid var(--rose);
+  color: #fff;
+}
+
+.pipe-step.step-failed .pipe-text {
+  color: #fda4af;
+}
+
+.pipe-line.completed {
+  background: linear-gradient(90deg, var(--emerald), var(--cyan));
+}
+
+/* ================= Error Diagnostic Card ================= */
+.error-diag-card {
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 25px rgba(244, 63, 94, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.error-diag-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.error-diag-icon {
+  font-size: 1.6rem;
+}
+
+.error-diag-titles h4 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: #fca5a5;
+  margin: 0;
+}
+
+.error-diag-code {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fda4af;
+  background: rgba(244, 63, 94, 0.2);
+  padding: 0.1rem 0.5rem;
+  border-radius: 10px;
+}
+
+.error-diag-message {
+  font-size: 0.88rem;
+  color: #fecdd3;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+.error-diag-solution {
+  padding: 0.7rem 0.9rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  margin-bottom: 0.9rem;
+  line-height: 1.4;
+}
+
+.error-diag-actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.btn-sm {
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+}
+
+/* ================= Terminal Logs Header & Action Chips ================= */
+.terminal-logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0 0.2rem;
+}
+
+.terminal-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.terminal-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Terminal Logs Container */
 .terminal-logs {
   background: #05070a;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
   padding: 1.2rem;
-  height: 400px;
+  height: 380px;
   overflow-y: auto;
   font-family: 'Consolas', 'Courier New', monospace;
   font-size: 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .log-entry {
-  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  line-height: 1.45;
   animation: fadeIn 0.2s ease;
+  word-break: break-word;
 }
 
-.log-info { color: #94a3b8; }
-.log-success { color: #34d399; }
-.log-warn { color: #fbbf24; }
-.log-error { color: #f87171; }
-.log-agent { color: #c084fc; font-weight: 600; }
+.log-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.chip-navigate { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); }
+.chip-scan     { background: rgba(6, 182, 212, 0.2);  color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
+.chip-ai_think { background: rgba(168, 85, 247, 0.25); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+.chip-autofill { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
+.chip-attach   { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); }
+.chip-snapshot { background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.35); }
+.chip-verify   { background: rgba(251, 146, 60, 0.25); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.4); }
+.chip-submit   { background: rgba(139, 92, 246, 0.3); color: #e9d5ff; border: 1px solid rgba(139, 92, 246, 0.5); }
+.chip-success  { background: rgba(34, 197, 94, 0.2);  color: #86efac; border: 1px solid rgba(34, 197, 94, 0.35); }
+.chip-error    { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.45); }
+.chip-alert    { background: rgba(234, 179, 8, 0.2);  color: #fef08a; border: 1px solid rgba(234, 179, 8, 0.35); }
+.chip-info     { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); }
+
+.log-time {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.log-text {
+  flex: 1;
+}
+
+.log-info { color: #cbd5e1; }
+.log-success { color: #6ee7b7; }
+.log-warn { color: #fde68a; }
+.log-error { color: #fda4af; }
+.log-agent { color: #d8b4fe; font-weight: 500; }
 
 .progress-bar-container {
   height: 6px;

@@ -245,10 +245,14 @@ class SessionStore {
       atsType: 'detecting',
       currentStep: 1,
       totalStepsEstimated: 1,
+      pipelineStep: 1,
+      currentAction: 'Agent Idle',
+      currentActionDetail: 'Ready for target career URL',
       status: 'INITIALIZING',
       fieldsFilled: [],
       screenerAnswers: {},
       reviewData: null,
+      errorDetails: null,
       logs: [],
       screenshots: [],
       confirmationReceipt: null,
@@ -275,15 +279,51 @@ class SessionStore {
     return this.activeSession;
   }
 
-  addSessionLog(message, type = 'info') {
+  setCurrentAction(action, detail = '', pipelineStep = null) {
     if (!this.activeSession) return;
+    this.activeSession.currentAction = action;
+    if (detail) this.activeSession.currentActionDetail = detail;
+    if (pipelineStep) this.activeSession.pipelineStep = pipelineStep;
+    this.activeSession.updatedAt = new Date().toISOString();
+    this.saveActiveSession();
+  }
+
+  setErrorDetails(errorObj) {
+    if (!this.activeSession) return;
+    this.activeSession.errorDetails = errorObj;
+    this.activeSession.status = 'FAILED';
+    this.activeSession.updatedAt = new Date().toISOString();
+    this.saveActiveSession();
+  }
+
+  addSessionLog(message, type = 'info', actionTag = null, detail = null) {
+    if (!this.activeSession) return;
+    const tag = actionTag || this.inferActionTag(message, type);
     const logEntry = {
       timestamp: new Date().toLocaleTimeString(),
       type,
-      message
+      message,
+      actionTag: tag,
+      detail: detail || ''
     };
     this.activeSession.logs.push(logEntry);
     this.saveActiveSession();
+  }
+
+  inferActionTag(msg, type) {
+    const m = (msg || '').toLowerCase();
+    if (type === 'error' || m.includes('error') || m.includes('fail')) return 'ERROR';
+    if (type === 'warn' || m.includes('warn') || m.includes('captcha')) return 'ALERT';
+    if (m.includes('navigat') || m.includes('page') || m.includes('url')) return 'NAVIGATE';
+    if (m.includes('platform') || m.includes('ats') || m.includes('detect') || m.includes('analyz') || m.includes('inspect')) return 'SCAN';
+    if (m.includes('ai') || m.includes('screener') || m.includes('gemini') || m.includes('reason') || m.includes('answer')) return 'AI_THINK';
+    if (m.includes('fill') || m.includes('input') || m.includes('select')) return 'AUTOFILL';
+    if (m.includes('resume') || m.includes('upload') || m.includes('attach') || m.includes('file')) return 'ATTACH';
+    if (m.includes('screenshot') || m.includes('snapshot')) return 'SNAPSHOT';
+    if (m.includes('review') || m.includes('verif') || m.includes('approv') || m.includes('paused')) return 'VERIFY';
+    if (m.includes('submit')) return 'SUBMIT';
+    if (type === 'success' || m.includes('success')) return 'SUCCESS';
+    return 'INFO';
   }
 
   saveActiveSession() {

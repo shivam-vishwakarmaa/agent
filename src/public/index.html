@@ -29,8 +29,12 @@
       </div>
     </div>
 
-    <!-- Active API Pool Indicator -->
+    <!-- Active API Pool Indicator & Live Agent Activity -->
     <div class="header-status">
+      <div class="agent-live-pill hidden" id="headerLiveActivity">
+        <span class="status-dot dot-pulse"></span>
+        <span id="headerLiveText">Agent Working...</span>
+      </div>
       <div class="api-pill" id="apiPoolPill">
         <span class="status-dot dot-active"></span>
         <span id="apiPoolStatus">API Pool: 0 Active</span>
@@ -157,13 +161,84 @@
               <span class="badge" id="sessionStatusBadge">IDLE</span>
             </div>
 
+            <!-- Agent Hero Status Card with Pulsing Ring -->
+            <div class="agent-hero-card" id="agentHeroCard">
+              <div class="hero-radar-icon">
+                <div class="radar-pulse" id="radarPulseEffect"></div>
+                <span class="radar-emoji" id="heroRadarEmoji">🤖</span>
+              </div>
+              <div class="hero-details">
+                <div class="hero-tags">
+                  <span class="hero-tag tag-primary" id="heroActionChip">STATUS: IDLE</span>
+                  <span class="hero-tag tag-muted" id="heroPlatformChip">Platform: Auto-Detect</span>
+                  <span class="hero-tag tag-muted" id="heroStepChip">Step 0/0</span>
+                </div>
+                <h3 class="hero-action-title" id="heroActionTitle">Agent is Ready</h3>
+                <p class="hero-action-detail" id="heroActionDetail">Enter a job URL on the left and click "Launch Application Agent" to start autonomous autofill and AI screener answering.</p>
+              </div>
+            </div>
+
+            <!-- 5-Step Execution Pipeline (Stepper) -->
+            <div class="pipeline-stepper" id="pipelineStepper">
+              <div class="pipe-step step-idle" id="pipeStep1">
+                <div class="pipe-circle">1</div>
+                <div class="pipe-text">Connect</div>
+              </div>
+              <div class="pipe-line" id="pipeLine1"></div>
+              <div class="pipe-step step-idle" id="pipeStep2">
+                <div class="pipe-circle">2</div>
+                <div class="pipe-text">Analyze</div>
+              </div>
+              <div class="pipe-line" id="pipeLine2"></div>
+              <div class="pipe-step step-idle" id="pipeStep3">
+                <div class="pipe-circle">3</div>
+                <div class="pipe-text">Fill & AI</div>
+              </div>
+              <div class="pipe-line" id="pipeLine3"></div>
+              <div class="pipe-step step-idle" id="pipeStep4">
+                <div class="pipe-circle">4</div>
+                <div class="pipe-text">Verify</div>
+              </div>
+              <div class="pipe-line" id="pipeLine4"></div>
+              <div class="pipe-step step-idle" id="pipeStep5">
+                <div class="pipe-circle">5</div>
+                <div class="pipe-text">Submit</div>
+              </div>
+            </div>
+
+            <!-- Error Diagnostic Box (shown when session fails) -->
+            <div class="error-diag-card hidden" id="errorDiagnosticCard">
+              <div class="error-diag-header">
+                <span class="error-diag-icon">🚨</span>
+                <div class="error-diag-titles">
+                  <h4 id="errorDiagTitle">Application Process Interrupted</h4>
+                  <span class="error-diag-code" id="errorDiagCode">ERROR</span>
+                </div>
+              </div>
+              <p class="error-diag-message" id="errorDiagMessage"></p>
+              <div class="error-diag-solution">
+                <strong>💡 Recommended Fix:</strong>
+                <span id="errorDiagSuggestion">Please verify the URL or try another company portal.</span>
+              </div>
+              <div class="error-diag-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnRetryApplication">🔄 Retry Application</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnDismissError">Dismiss</button>
+              </div>
+            </div>
+
             <div class="progress-bar-container">
               <div class="progress-bar-fill" id="sessionProgressBar" style="width: 0%"></div>
             </div>
 
+            <!-- Terminal Logs Header & Controls -->
+            <div class="terminal-logs-header">
+              <span class="terminal-title">LIVE EXECUTION TIMELINE</span>
+              <span class="terminal-count" id="terminalLogCount">0 events</span>
+            </div>
+
             <!-- Terminal Logs -->
             <div class="terminal-logs" id="terminalLogs">
-              <div class="log-entry log-info">[Agent System] Ready. Enter a job URL above to start.</div>
+              <div class="log-entry log-info"><span class="log-chip chip-info">INFO</span> [Agent System] Ready. Enter a job URL above to start.</div>
             </div>
           </div>
         </div>

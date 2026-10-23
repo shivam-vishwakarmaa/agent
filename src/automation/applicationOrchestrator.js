@@ -26,20 +26,23 @@ class ApplicationOrchestrator {
       mode
     });
 
-    sessionStore.addSessionLog(`Starting application process for ${companyName || 'Target Company'}...`, 'info');
+    sessionStore.addSessionLog(`Starting application process for ${companyName || 'Target Company'}...`, 'info', 'NAVIGATE');
+    sessionStore.setCurrentAction('Navigating to Career Portal', `Connecting to ${jobUrl}...`, 1);
     sessionStore.updateSession({ status: 'NAVIGATING' });
 
     try {
       // 1. Navigate to URL
       const page = await browserController.navigateTo(jobUrl);
       const currentUrl = (page && typeof page.url === 'function') ? page.url() : jobUrl;
-      sessionStore.addSessionLog(`Successfully navigated to job page: ${currentUrl}`, 'success');
+      sessionStore.addSessionLog(`Successfully navigated to job page: ${currentUrl}`, 'success', 'NAVIGATE');
+      sessionStore.setCurrentAction('Inspecting Page & Platform', `Page loaded: ${currentUrl.slice(0, 60)}...`, 1);
 
       // 2. Detect ATS platform
       const pageTitle = (page && typeof page.title === 'function') ? await page.title() : '';
       const ats = detectAts(currentUrl, pageTitle);
       sessionStore.updateSession({ atsType: ats.name });
-      sessionStore.addSessionLog(`Detected Platform: ${ats.name}`, 'info');
+      sessionStore.addSessionLog(`Detected Platform: ${ats.name}`, 'info', 'SCAN');
+      sessionStore.setCurrentAction('Analyzing ATS Platform', `Identified ${ats.name}. Inspecting DOM form elements...`, 2);
 
       // 3. Multi-Step Wizard Loop (up to 6 steps to prevent infinite loops)
       let step = 1;
@@ -48,20 +51,22 @@ class ApplicationOrchestrator {
 
       while (step <= maxSteps && !hasCompleted) {
         sessionStore.updateSession({ currentStep: step, status: 'ANALYZING' });
-        sessionStore.addSessionLog(`Analyzing Step ${step} form fields...`, 'info');
+        sessionStore.setCurrentAction(`Analyzing Form Fields (Step ${step})`, `Inspecting DOM for interactive input controls...`, 2);
+        sessionStore.addSessionLog(`Analyzing Step ${step} form fields...`, 'info', 'SCAN');
 
         // Check for CAPTCHA
         const isCaptcha = await browserController.checkForCaptcha();
         if (isCaptcha) {
           sessionStore.updateSession({ status: 'CAPTCHA_PAUSE' });
-          sessionStore.addSessionLog('⚠️ CAPTCHA / Cloudflare detected! Please solve it in the browser window. Waiting...', 'warn');
+          sessionStore.setCurrentAction('CAPTCHA / Challenge Detected', 'Waiting for human verification in browser window...', 2);
+          sessionStore.addSessionLog('⚠️ CAPTCHA / Cloudflare detected! Please solve it in the browser window. Waiting...', 'warn', 'ALERT');
           await this.waitForCaptchaResolution(page);
-          sessionStore.addSessionLog('CAPTCHA resolved! Continuing auto-fill...', 'success');
+          sessionStore.addSessionLog('CAPTCHA resolved! Continuing auto-fill...', 'success', 'SUCCESS');
         }
 
         // Extract minified form fields
         const minified = await browserController.extractMinifiedForm();
-        sessionStore.addSessionLog(`Found ${minified.fields.length} interactive fields on current page.`, 'info');
+        sessionStore.addSessionLog(`Found ${minified.fields.length} interactive fields on current page.`, 'info', 'SCAN');
 
         // Check if current page has actual candidate profile fields (Name, Email, Phone, Resume, etc.)
         const candidateKeywords = ['name', 'first', 'last', 'email', 'phone', 'mobile', 'resume', 'cv', 'address', 'education', 'experience', 'github', 'linkedin'];
@@ -75,7 +80,8 @@ class ApplicationOrchestrator {
         if (!hasCandidateFields && await jobLinks.count() > 0 && await jobLinks.isVisible()) {
           const rawJobText = (await jobLinks.innerText()).trim();
           const jobTitle = rawJobText.split('\n')[0] || 'Top Matched Role';
-          sessionStore.addSessionLog(`Detected career portal search directory. Opening top vacancy: "${jobTitle}"...`, 'info');
+          sessionStore.setCurrentAction('Opening Top Job Vacancy', `Found opening: "${jobTitle}". Opening application...`, 2);
+          sessionStore.addSessionLog(`Detected career portal search directory. Opening top vacancy: "${jobTitle}"...`, 'info', 'NAVIGATE');
           await jobLinks.click();
           await page.waitForTimeout(4500);
           continue;
@@ -85,18 +91,20 @@ class ApplicationOrchestrator {
         const applyBtn = page.locator('a:has-text("Apply"), button:has-text("Apply"), [data-automation-id*="apply" i], a[href*="/apply" i]').first();
         if (!hasCandidateFields && await applyBtn.count() > 0 && await applyBtn.isVisible()) {
           const btnText = (await applyBtn.innerText()).trim() || 'Apply';
-          sessionStore.addSessionLog(`Found "${btnText}" button on job overview page. Launching application form...`, 'info');
+          sessionStore.setCurrentAction('Launching Application Form', `Clicking "${btnText}" to enter application form...`, 2);
+          sessionStore.addSessionLog(`Found "${btnText}" button on job overview page. Launching application form...`, 'info', 'NAVIGATE');
           await applyBtn.click();
           await page.waitForTimeout(4500);
           continue;
         }
 
         if (!hasCandidateFields && step === 1) {
-          sessionStore.addSessionLog('⚠️ No candidate application form or job openings detected on this page. Please enter a direct job posting URL or crawl open jobs from the radar.', 'warn');
+          sessionStore.addSessionLog('⚠️ No candidate application form or job openings detected on this page. Please enter a direct job posting URL or crawl open jobs from the radar.', 'warn', 'ALERT');
         }
 
         // Fill fields using profile and AI screener
         sessionStore.updateSession({ status: 'FILLING' });
+        sessionStore.setCurrentAction('Autofilling Application Form', `Populating candidate information & AI screener answers (Step ${step})...`, 3);
         const profile = sessionStore.getProfile();
         const filled = await formFiller.fillPageFields(page, minified, profile, {
           companyName: session.companyName,
@@ -106,12 +114,14 @@ class ApplicationOrchestrator {
         sessionStore.updateSession({
           fieldsFilled: [...session.fieldsFilled, ...filled]
         });
-        sessionStore.addSessionLog(`Filled ${filled.length} fields accurately.`, 'success');
+        sessionStore.addSessionLog(`Filled ${filled.length} fields accurately.`, 'success', 'AUTOFILL');
 
         // Take a screenshot of the filled form
+        sessionStore.setCurrentAction('Capturing Proof Screenshot', 'Saving visual verification snapshot...', 3);
         const screenshot = await browserController.captureScreenshot(`step_${step}`);
         if (screenshot) {
           session.screenshots.push(screenshot.filename);
+          sessionStore.addSessionLog(`Captured proof snapshot: ${screenshot.filename}`, 'info', 'SNAPSHOT');
         }
 
         // Check buttons: Is it ready for Submit or Next?
@@ -123,7 +133,7 @@ class ApplicationOrchestrator {
         const isAtFinalStage = Boolean(reviewBtn || (submitBtn && !nextBtn && session.fieldsFilled.length > 0));
 
         if (isAtFinalStage) {
-          sessionStore.addSessionLog('Reached final application review stage!', 'info');
+          sessionStore.addSessionLog('Reached final application review stage!', 'info', 'VERIFY');
 
           // Prepare Review Data for the user dashboard
           const reviewData = {
@@ -137,23 +147,25 @@ class ApplicationOrchestrator {
           if (mode === 'review') {
             // VERIFY & REVIEW MODE: Pause and await user approval in UI
             sessionStore.updateSession({ status: 'WAITING_FOR_REVIEW' });
-            sessionStore.addSessionLog('🛑 PAUSED FOR YOUR VERIFICATION: Please review filled fields and screenshot in dashboard, then click "Approve & Submit".', 'warn');
+            sessionStore.setCurrentAction('🛑 Paused: Verification Required', 'Review filled fields and screenshot in dashboard, then click "Approve & Submit".', 4);
+            sessionStore.addSessionLog('🛑 PAUSED FOR YOUR VERIFICATION: Please review filled fields and screenshot in dashboard, then click "Approve & Submit".', 'warn', 'VERIFY');
             
             // Wait for user approval
             await this.waitForUserApproval();
 
-            sessionStore.addSessionLog('User approved! Proceeding to submit application...', 'success');
+            sessionStore.addSessionLog('User approved! Proceeding to submit application...', 'success', 'SUCCESS');
           }
 
           // Submit the application
           if (submitBtn) {
             sessionStore.updateSession({ status: 'SUBMITTING' });
-            sessionStore.addSessionLog(`Clicking Submit button ("${submitBtn.text}")...`, 'agent');
+            sessionStore.setCurrentAction('Submitting Application', `Clicking submit button ("${submitBtn.text}")...`, 5);
+            sessionStore.addSessionLog(`Clicking Submit button ("${submitBtn.text}")...`, 'agent', 'SUBMIT');
             try {
               await page.locator(submitBtn.selector).first().click({ timeout: 8000 });
               await page.waitForTimeout(4000);
             } catch (clickErr) {
-              sessionStore.addSessionLog(`Notice on submit click: ${clickErr.message.split('\n')[0]}`, 'info');
+              sessionStore.addSessionLog(`Notice on submit click: ${clickErr.message.split('\n')[0]}`, 'info', 'INFO');
             }
 
             // Final confirmation screenshot
@@ -165,10 +177,12 @@ class ApplicationOrchestrator {
                 screenshotUrl: finalShot ? `/screenshots/${finalShot.filename}` : null
               }
             });
-            sessionStore.addSessionLog('🎉 Application submitted successfully!', 'success');
+            sessionStore.setCurrentAction('Application Completed', 'Application submitted successfully with confirmation receipt.', 5);
+            sessionStore.addSessionLog('🎉 Application submitted successfully!', 'success', 'SUCCESS');
           } else {
             sessionStore.updateSession({ status: 'COMPLETED' });
-            sessionStore.addSessionLog('Reached final page. Form ready for manual final click if needed.', 'success');
+            sessionStore.setCurrentAction('Application Completed', 'Reached final stage. Ready for manual final confirmation if required.', 5);
+            sessionStore.addSessionLog('Reached final page. Form ready for manual final click if needed.', 'success', 'SUCCESS');
           }
 
           hasCompleted = true;
@@ -177,13 +191,15 @@ class ApplicationOrchestrator {
 
         // Multi-Step: Click Next button to advance to next step
         if (nextBtn) {
-          sessionStore.addSessionLog(`Proceeding to next step (clicking "${nextBtn.text}")...`, 'info');
+          sessionStore.setCurrentAction('Advancing to Next Step', `Clicking "${nextBtn.text}" button...`, 3);
+          sessionStore.addSessionLog(`Proceeding to next step (clicking "${nextBtn.text}")...`, 'info', 'NAVIGATE');
           await page.locator(nextBtn.selector).first().click();
           await page.waitForTimeout(3000);
           step++;
         } else {
           // No next and no submit button found
-          sessionStore.addSessionLog('Form filled. No further navigation buttons detected.', 'info');
+          sessionStore.addSessionLog('Form filled. No further navigation buttons detected.', 'info', 'INFO');
+          sessionStore.setCurrentAction('Form Filling Finished', 'Completed all detected form fields.', 5);
           sessionStore.updateSession({ status: 'COMPLETED' });
           hasCompleted = true;
           break;
@@ -193,10 +209,55 @@ class ApplicationOrchestrator {
       return sessionStore.getActiveSession();
     } catch (err) {
       console.error('[Orchestrator] Error during application:', err);
-      sessionStore.updateSession({ status: 'FAILED' });
-      sessionStore.addSessionLog(`Error: ${err.message}`, 'error');
+      const friendlyErr = this.generateFriendlyError(err, jobUrl);
+      sessionStore.setErrorDetails(friendlyErr);
+      sessionStore.setCurrentAction(`❌ Error: ${friendlyErr.title}`, friendlyErr.message, 5);
+      sessionStore.addSessionLog(`❌ Error: ${friendlyErr.title} - ${friendlyErr.message}`, 'error', 'ERROR', friendlyErr.suggestion);
       throw err;
     }
+  }
+
+  generateFriendlyError(err, jobUrl) {
+    const rawMsg = err.message || String(err);
+    let title = 'Application Process Interrupted';
+    let message = rawMsg.split('\n')[0];
+    let suggestion = 'Please verify the job URL or select an active hiring company from the radar.';
+    let code = 'EXECUTION_ERROR';
+
+    if (rawMsg.includes('ERR_NAME_NOT_RESOLVED')) {
+      title = 'Career Portal URL Unreachable (DNS Error)';
+      message = `Cannot resolve the domain for "${jobUrl}". The link may be broken, expired, or blocked in your region.`;
+      suggestion = 'Check the URL for typos, or browse active hiring companies in the Autonomous Job Discovery Radar.';
+      code = 'DNS_UNRESOLVED';
+    } else if (rawMsg.includes('Timeout') && rawMsg.includes('click')) {
+      title = 'Form Element Timeout';
+      message = 'The agent waited for a submit/next button, but the page layout changed or a required field was not satisfied.';
+      suggestion = 'Use "Review & Verify" mode so you can view the live state, or enter a direct application form link.';
+      code = 'ELEMENT_TIMEOUT';
+    } else if (rawMsg.includes('No Gemini API keys')) {
+      title = 'Gemini API Key Required';
+      message = 'No active API key in pool to answer screener questions with AI.';
+      suggestion = 'Open the "API Key Failover Pool" tab and paste your Gemini API key.';
+      code = 'MISSING_API_KEY';
+    } else if (rawMsg.includes('CAPTCHA')) {
+      title = 'CAPTCHA Challenge Timeout';
+      message = 'Cloudflare or reCAPTCHA verification was presented on the website and needed to be solved.';
+      suggestion = 'Keep the browser window in view and solve any bot tests when prompted.';
+      code = 'CAPTCHA_BLOCKED';
+    } else if (rawMsg.includes('net::ERR_CONNECTION_REFUSED') || rawMsg.includes('net::ERR_TIMED_OUT')) {
+      title = 'Target Website Not Responding';
+      message = 'The employer website took too long to respond or refused the connection.';
+      suggestion = 'Open the link in your regular browser to verify if the company website is online.';
+      code = 'CONNECTION_TIMEOUT';
+    }
+
+    return {
+      title,
+      message,
+      suggestion,
+      code,
+      technicalDetails: rawMsg
+    };
   }
 
   /**
