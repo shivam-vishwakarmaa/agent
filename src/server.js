@@ -184,6 +184,35 @@ app.post('/api/session/resume-auth', (req, res) => {
   res.json({ success: resumed, message: resumed ? 'Resumed application execution' : 'Not waiting for authentication' });
 });
 
+app.post('/api/session/provide-auth-credentials', (req, res) => {
+  const { email, password, action, rememberPassword } = req.body;
+  if (!password) {
+    return res.status(400).json({ error: 'Password is required' });
+  }
+
+  const handled = applicationOrchestrator.provideAuthCredentials({
+    email,
+    password,
+    action: action || 'CREATE_ACCOUNT',
+    rememberPassword: rememberPassword !== false
+  });
+
+  res.json({
+    success: handled,
+    message: handled ? 'Credentials submitted to active session' : 'Session not currently waiting for credentials'
+  });
+});
+
+app.get('/api/credentials', (req, res) => {
+  res.json(sessionStore.getCredentials());
+});
+
+app.post('/api/credentials', (req, res) => {
+  const { accountEmail, defaultPassword, savePasswords } = req.body;
+  const updated = sessionStore.saveCredentials({ accountEmail, defaultPassword, savePasswords });
+  res.json({ success: true, credentials: updated });
+});
+
 // ==================== Autonomous Role Discovery Endpoints ====================
 
 /**

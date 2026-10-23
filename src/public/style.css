@@ -852,6 +852,78 @@ input:focus, select:focus, textarea:focus {
   gap: 0.8rem;
 }
 
+.auth-gate-form {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.auth-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .auth-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.auth-form-field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #d8b4fe;
+  margin-bottom: 0.35rem;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap input {
+  padding-right: 2.5rem;
+  width: 100%;
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0.2rem;
+}
+
+.btn-toggle-eye:hover {
+  opacity: 1;
+}
+
+.auth-form-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.remember-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 /* ================= Error Diagnostic Card ================= */
 .error-diag-card {
   padding: 1.2rem 1.4rem;

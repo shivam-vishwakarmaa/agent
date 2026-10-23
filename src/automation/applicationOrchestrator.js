@@ -17,12 +17,22 @@ class ApplicationOrchestrator {
     this.reviewPromiseResolve = null;
     this.isPausedForAuth = false;
     this.authPromiseResolve = null;
+    this.isWaitingForCredentials = false;
+    this.credentialsPromiseResolve = null;
+    this.cachedPassword = null;
   }
 
   /**
    * Start executing application for a target URL
    */
   async runApplication(jobUrl, companyName = '', jobTitle = '', mode = 'review') {
+    this.isPausedForReview = false;
+    this.reviewPromiseResolve = null;
+    this.isPausedForAuth = false;
+    this.authPromiseResolve = null;
+    this.isWaitingForCredentials = false;
+    this.credentialsPromiseResolve = null;
+
     const session = sessionStore.createSession({
       companyName,
       jobTitle,
@@ -307,71 +317,171 @@ class ApplicationOrchestrator {
    * Handle ATS / Workday Account Creation or Sign In
    */
   async handleAccountGate(page, profile) {
-    const email = profile.personal?.email || 'svshivamshailendra@gmail.com';
-    const password = profile.preferences?.workdayPassword || 'ShivamApply#2028';
+    // 1. Accept cookie consent notice if visible
+    const legalNoticeBtn = page.locator('[data-automation-id="legalNoticeAcceptButton"], button:has-text("Accept All"), button:has-text("Accept Cookies")').first();
+    if (await legalNoticeBtn.isVisible().catch(() => false)) {
+      await legalNoticeBtn.click().catch(() => {});
+      await page.waitForTimeout(1000);
+    }
 
+    let email = profile.credentials?.accountEmail || profile.personal?.email || 'shivamvishwa844@gmail.com';
+    let password = this.cachedPassword || profile.credentials?.defaultPassword;
+
+    // Check what elements are present on the auth page
     const createBtn = page.locator('[data-automation-id="createAccountSubmitButton"], button:has-text("Create Account")').first();
-    const emailInput = page.locator('[data-automation-id="email"] input, input[data-automation-id="email"]').first();
-    const passInput = page.locator('[data-automation-id="password"] input, input[data-automation-id="password"]').first();
+    const emailInput = page.locator('[data-automation-id="email"] input, input[data-automation-id="email"], input[type="email"]').first();
+    const passInput = page.locator('[data-automation-id="password"] input, input[data-automation-id="password"], input[type="password"]').first();
     const verifyInput = page.locator('[data-automation-id="verifyPassword"] input, input[data-automation-id="verifyPassword"]').first();
     const termsCheck = page.locator('[data-automation-id="createAccountCheckbox"] input, input[data-automation-id="createAccountCheckbox"]').first();
+    const signInLink = page.locator('[data-automation-id="signInLink"], a:has-text("Sign In"), button:has-text("Sign In")').first();
+    const createAccountLink = page.locator('[data-automation-id="createAccountLink"], a:has-text("Create Account"), button:has-text("Create Account")').first();
 
-    if (await createBtn.isVisible().catch(() => false) && await emailInput.isVisible().catch(() => false)) {
-      sessionStore.addSessionLog(`Autofilling account registration with email: ${email}`, 'info', 'AUTOFILL');
-      await emailInput.fill(email);
-      await passInput.fill(password);
-      if (await verifyInput.isVisible().catch(() => false)) {
-        await verifyInput.fill(password);
+    const isCreateAccountFormVisible = await createBtn.isVisible().catch(() => false);
+
+    // 2. If password is not configured, ASK THE USER dynamically in the Web Dashboard
+    let requestedAction = 'CREATE_ACCOUNT';
+    if (!password) {
+      const session = sessionStore.getActiveSession() || {};
+      sessionStore.updateSession({
+        status: 'WAITING_FOR_AUTH',
+        authDetails: {
+          action: 'CREATE_ACCOUNT',
+          companyName: session.companyName || 'Job Portal',
+          email: email,
+          reason: 'NEED_PASSWORD',
+          title: `Create Account on ${session.companyName || 'Employer Portal'}`,
+          message: `An account does not exist yet for ${email}. Please enter the password you want the agent to use to create your account:`
+        }
+      });
+      sessionStore.setCurrentAction('🔐 Password Required to Create Account', `Please enter your account password in the dashboard to register on ${session.companyName || 'portal'}.`, 2);
+      sessionStore.addSessionLog(`🔐 ACCOUNT CREATION: No account registered for ${email}. Please enter your account password in the dashboard below to proceed.`, 'warn', 'ALERT');
+
+      const userAuth = await this.waitForUserCredentials();
+      password = userAuth.password;
+      if (userAuth.email) email = userAuth.email;
+      if (userAuth.action) requestedAction = userAuth.action;
+      this.cachedPassword = password;
+      if (userAuth.rememberPassword) {
+        sessionStore.saveCredentials({ accountEmail: email, defaultPassword: password, savePasswords: true });
       }
-      if (await termsCheck.isVisible().catch(() => false)) {
-        await termsCheck.check().catch(() => termsCheck.click());
+    }
+
+    // 3. Execution: If user chose to Sign In directly
+    if (requestedAction === 'SIGN_IN') {
+      sessionStore.addSessionLog(`Signing into portal with ${email}...`, 'agent', 'AUTOFILL');
+      if (isCreateAccountFormVisible && await signInLink.isVisible().catch(() => false)) {
+        await signInLink.click();
+        await page.waitForTimeout(1500);
+      }
+      const loginEmail = page.locator('[data-automation-id="userName"] input, [data-automation-id="email"] input, input[type="text"]:not([name="website"]), input[type="email"]').first();
+      const loginPass = page.locator('input[type="password"]').first();
+      const signInBtn = page.locator('[data-automation-id="signInSubmitButton"], button:has-text("Sign In")').first();
+
+      if (await loginEmail.isVisible().catch(() => false)) {
+        await loginEmail.fill(email);
+        await loginPass.fill(password);
+        await signInBtn.click();
+        await page.waitForTimeout(4500);
+      }
+    } else {
+      // 4. Execution: Create Account flow
+      if (!isCreateAccountFormVisible && await createAccountLink.isVisible().catch(() => false)) {
+        sessionStore.addSessionLog('Switching to Create Account tab...', 'info', 'NAVIGATE');
+        await createAccountLink.click();
+        await page.waitForTimeout(1500);
       }
 
-      await page.waitForTimeout(1000);
-      sessionStore.addSessionLog('Submitting account registration to Workday...', 'info', 'AUTOFILL');
-      await createBtn.click();
-      await page.waitForTimeout(5000);
+      if (await emailInput.isVisible().catch(() => false)) {
+        sessionStore.addSessionLog(`Autofilling account registration with email: ${email}`, 'info', 'AUTOFILL');
+        await emailInput.fill(email);
+        await passInput.fill(password);
+        if (await verifyInput.isVisible().catch(() => false)) {
+          await verifyInput.fill(password);
+        }
+        if (await termsCheck.isVisible().catch(() => false)) {
+          await termsCheck.check().catch(() => termsCheck.click());
+        }
 
-      // Check if account already exists
-      const bodyText = await page.innerText('body').catch(() => '');
-      if (bodyText.includes('already exists') || bodyText.includes('already have an account')) {
-        sessionStore.addSessionLog('Account already registered for this email. Switching to Sign In...', 'info', 'INFO');
-        const signInLink = page.locator('[data-automation-id="signInLink"], a:has-text("Sign In"), button:has-text("Sign In")').first();
-        if (await signInLink.isVisible().catch(() => false)) {
-          await signInLink.click();
-          await page.waitForTimeout(2000);
-          const loginEmail = page.locator('[data-automation-id="userName"] input, [data-automation-id="email"] input, input[type="text"]:not([name="website"])').first();
-          const loginPass = page.locator('input[type="password"]').first();
-          const signInBtn = page.locator('[data-automation-id="signInSubmitButton"], button:has-text("Sign In")').first();
-          if (await loginEmail.isVisible().catch(() => false)) {
-            await loginEmail.fill(email);
-            await loginPass.fill(password);
-            await signInBtn.click();
-            await page.waitForTimeout(5000);
+        await page.waitForTimeout(1000);
+        sessionStore.addSessionLog('Submitting account registration to Workday...', 'agent', 'AUTOFILL');
+        if (await createBtn.isVisible().catch(() => false)) {
+          await createBtn.click();
+        } else {
+          await page.keyboard.press('Enter');
+        }
+        await page.waitForTimeout(5000);
+
+        // Check if account already exists
+        const bodyText = await page.innerText('body').catch(() => '');
+        if (bodyText.includes('already exists') || bodyText.includes('already have an account')) {
+          sessionStore.addSessionLog(`Notice: Account already registered for ${email}. Switching to Sign In...`, 'info', 'INFO');
+          if (await signInLink.isVisible().catch(() => false)) {
+            await signInLink.click();
+            await page.waitForTimeout(2000);
+            const loginEmail = page.locator('[data-automation-id="userName"] input, [data-automation-id="email"] input, input[type="text"]:not([name="website"])').first();
+            const loginPass = page.locator('input[type="password"]').first();
+            const signInBtn = page.locator('[data-automation-id="signInSubmitButton"], button:has-text("Sign In")').first();
+            if (await loginEmail.isVisible().catch(() => false)) {
+              await loginEmail.fill(email);
+              await loginPass.fill(password);
+              await signInBtn.click();
+              await page.waitForTimeout(5000);
+            }
           }
         }
       }
-
-      // Check if email verification code (OTP) or 2FA challenge is present
-      const hasOtp = await page.evaluate(() => {
-        const text = (document.body.innerText || '').toLowerCase();
-        return text.includes('verification code') || text.includes('security code') || text.includes('enter the code') || text.includes('one-time passcode');
-      });
-
-      if (hasOtp) {
-        return { requiresUserAction: true, reason: 'OTP_REQUIRED' };
-      }
-
-      // Check if successfully advanced past auth screen
-      const isStillAuth = await this.detectAuthGate(page);
-      if (isStillAuth) {
-        return { requiresUserAction: true, reason: 'MANUAL_SIGNIN' };
-      }
-
-      return { success: true };
     }
 
-    return { requiresUserAction: true, reason: 'AUTH_GATE' };
+    // 5. Check if email verification code (OTP) or 2FA challenge is present
+    const hasOtp = await page.evaluate(() => {
+      const text = (document.body.innerText || '').toLowerCase();
+      return text.includes('verification code') || text.includes('security code') || text.includes('enter the code') || text.includes('one-time passcode');
+    });
+
+    if (hasOtp) {
+      sessionStore.updateSession({
+        status: 'WAITING_FOR_AUTH',
+        authDetails: {
+          action: 'VERIFY_OTP',
+          email: email,
+          reason: 'OTP_REQUIRED',
+          title: 'Verification Code Required',
+          message: `Workday sent a verification code to ${email}. Please check your inbox and enter the code in the browser window, then click Continue.`
+        }
+      });
+      sessionStore.setCurrentAction('🛑 Verification Code Required', `Enter the verification code sent to ${email} in the browser window.`, 2);
+      sessionStore.addSessionLog(`📧 Verification code required: Sent to ${email}. Please enter the code in the browser window, then click Continue.`, 'warn', 'ALERT');
+      return { requiresUserAction: true, reason: 'OTP_REQUIRED' };
+    }
+
+    // 6. Check if successfully advanced past auth screen
+    const isStillAuth = await this.detectAuthGate(page);
+    if (isStillAuth) {
+      return { requiresUserAction: true, reason: 'MANUAL_SIGNIN' };
+    }
+
+    sessionStore.addSessionLog('🎉 Account created and authenticated successfully!', 'success', 'SUCCESS');
+    return { success: true };
+  }
+
+  /**
+   * Pause execution and wait for user to provide credentials via UI modal
+   */
+  waitForUserCredentials() {
+    this.isWaitingForCredentials = true;
+    return new Promise(resolve => {
+      this.credentialsPromiseResolve = resolve;
+    });
+  }
+
+  provideAuthCredentials({ email, password, action = 'CREATE_ACCOUNT', rememberPassword = true }) {
+    if (this.isWaitingForCredentials && this.credentialsPromiseResolve) {
+      this.isWaitingForCredentials = false;
+      this.credentialsPromiseResolve({ email, password, action, rememberPassword });
+      this.credentialsPromiseResolve = null;
+      return true;
+    }
+    return false;
   }
 
   /**

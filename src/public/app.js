@@ -72,11 +72,72 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDismissError = document.getElementById('btnDismissError');
 
   const authGateCard = document.getElementById('authGateCard');
+  const authGateTitle = document.getElementById('authGateTitle');
+  const authGateDesc = document.getElementById('authGateDesc');
+  const authGateFormSection = document.getElementById('authGateFormSection');
+  const authGateVerifySection = document.getElementById('authGateVerifySection');
+  const authEmailInput = document.getElementById('authEmailInput');
+  const authPasswordInput = document.getElementById('authPasswordInput');
+  const btnToggleAuthPass = document.getElementById('btnToggleAuthPass');
+  const authRememberPassword = document.getElementById('authRememberPassword');
+  const btnSubmitAuthCredentials = document.getElementById('btnSubmitAuthCredentials');
+  const btnSignInInstead = document.getElementById('btnSignInInstead');
   const btnResumeAuth = document.getElementById('btnResumeAuth');
 
-  const terminalLogCount = document.getElementById('terminalLogCount');
-  const headerLiveActivity = document.getElementById('headerLiveActivity');
-  const headerLiveText = document.getElementById('headerLiveText');
+  if (btnToggleAuthPass && authPasswordInput) {
+    btnToggleAuthPass.addEventListener('click', () => {
+      const isPass = authPasswordInput.type === 'password';
+      authPasswordInput.type = isPass ? 'text' : 'password';
+      btnToggleAuthPass.textContent = isPass ? '🙈' : '👁️';
+    });
+  }
+
+  async function submitAuthCredentials(action = 'CREATE_ACCOUNT') {
+    if (!authPasswordInput || !authPasswordInput.value.trim()) {
+      alert('Please enter a password for your account.');
+      authPasswordInput?.focus();
+      return;
+    }
+
+    const email = authEmailInput ? authEmailInput.value.trim() : 'shivamvishwa844@gmail.com';
+    const password = authPasswordInput.value;
+    const rememberPassword = authRememberPassword ? authRememberPassword.checked : true;
+
+    const targetBtn = action === 'CREATE_ACCOUNT' ? btnSubmitAuthCredentials : btnSignInInstead;
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.innerHTML = '<span>⏳ Submitting...</span>';
+    }
+
+    try {
+      const res = await fetch('/api/session/provide-auth-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, action, rememberPassword })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (authGateFormSection) authGateFormSection.classList.add('hidden');
+        if (authGateVerifySection) authGateVerifySection.classList.remove('hidden');
+        if (authGateDesc) authGateDesc.textContent = 'Account credentials submitted! Processing registration...';
+      }
+    } catch (err) {
+      alert('Failed to submit credentials: ' + err.message);
+    } finally {
+      if (targetBtn) {
+        targetBtn.disabled = false;
+        targetBtn.innerHTML = action === 'CREATE_ACCOUNT' ? '🚀 Create Account & Proceed Application' : '🔑 Sign In With This Password';
+      }
+    }
+  }
+
+  if (btnSubmitAuthCredentials) {
+    btnSubmitAuthCredentials.addEventListener('click', () => submitAuthCredentials('CREATE_ACCOUNT'));
+  }
+
+  if (btnSignInInstead) {
+    btnSignInInstead.addEventListener('click', () => submitAuthCredentials('SIGN_IN'));
+  }
 
   if (btnResumeAuth) {
     btnResumeAuth.addEventListener('click', async () => {
@@ -233,7 +294,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Update Authentication Gateway Card
     if (session.status === 'WAITING_FOR_AUTH') {
-      if (authGateCard) authGateCard.classList.remove('hidden');
+      if (authGateCard) {
+        authGateCard.classList.remove('hidden');
+        const details = session.authDetails || {};
+        if (details.title && authGateTitle) authGateTitle.textContent = details.title;
+        if (details.message && authGateDesc) authGateDesc.textContent = details.message;
+        if (details.email && authEmailInput) authEmailInput.value = details.email;
+
+        if (details.reason === 'NEED_PASSWORD' || details.action === 'CREATE_ACCOUNT') {
+          if (authGateFormSection) authGateFormSection.classList.remove('hidden');
+          if (authGateVerifySection) authGateVerifySection.classList.add('hidden');
+        } else {
+          if (authGateFormSection) authGateFormSection.classList.add('hidden');
+          if (authGateVerifySection) authGateVerifySection.classList.remove('hidden');
+        }
+      }
     } else {
       if (authGateCard) authGateCard.classList.add('hidden');
     }
@@ -895,6 +970,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('remotePreference')) document.getElementById('remotePreference').value = prefs.remotePreference || 'Flexible';
       if (document.getElementById('preferredRoles')) document.getElementById('preferredRoles').value = (prefs.preferredRoles || []).join(', ');
 
+      const creds = profile.credentials || {};
+      if (document.getElementById('credAccountEmail')) {
+        document.getElementById('credAccountEmail').value = creds.accountEmail || p.email || 'shivamvishwa844@gmail.com';
+      }
+      if (document.getElementById('credDefaultPassword')) {
+        document.getElementById('credDefaultPassword').value = creds.defaultPassword || '';
+      }
+
       if (p.fullName) {
         quickName.textContent = p.fullName;
         avatarLetter.textContent = p.fullName.charAt(0).toUpperCase();
@@ -924,6 +1007,11 @@ document.addEventListener('DOMContentLoaded', () => {
         linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
         githubUrl: document.getElementById('githubUrl').value.trim(),
         portfolioUrl: document.getElementById('portfolioUrl').value.trim()
+      },
+      credentials: {
+        accountEmail: (document.getElementById('credAccountEmail') ? document.getElementById('credAccountEmail').value.trim() : '') || 'shivamvishwa844@gmail.com',
+        defaultPassword: document.getElementById('credDefaultPassword') ? document.getElementById('credDefaultPassword').value : '',
+        savePasswords: true
       },
       preferences: {
         experienceLevel: document.getElementById('experienceLevel').value,

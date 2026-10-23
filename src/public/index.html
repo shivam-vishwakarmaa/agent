@@ -210,15 +210,50 @@
             <div class="auth-gate-card hidden" id="authGateCard">
               <div class="auth-gate-header">
                 <span class="auth-gate-icon">🔐</span>
-                <div>
+                <div class="auth-gate-title-wrap">
                   <h4 id="authGateTitle">Workday / Portal Authentication Required</h4>
-                  <p id="authGateDesc">The employer portal requires you to complete sign-in or enter the email verification code sent to your inbox.</p>
+                  <p id="authGateDesc">The employer portal requires you to create an account or verify credentials to proceed.</p>
                 </div>
               </div>
-              <div class="auth-gate-actions">
-                <button type="button" class="btn btn-primary btn-sm" id="btnResumeAuth">
-                  ✅ I've Completed Sign-In / Verified Code - Continue
-                </button>
+
+              <!-- Interactive Password Input Section (Shown when NEED_PASSWORD / CREATE_ACCOUNT) -->
+              <div class="auth-gate-form" id="authGateFormSection">
+                <div class="auth-form-row">
+                  <div class="auth-form-field">
+                    <label for="authEmailInput">Account Login Email</label>
+                    <input type="email" id="authEmailInput" class="form-control form-control-sm" value="shivamvishwa844@gmail.com" />
+                  </div>
+                  <div class="auth-form-field">
+                    <label for="authPasswordInput">Account Password <span class="text-muted">(Min 8 chars, 1 uppercase, 1 number)</span></label>
+                    <div class="password-input-wrap">
+                      <input type="password" id="authPasswordInput" class="form-control form-control-sm" placeholder="Enter password (e.g. Shivam#2028)" />
+                      <button type="button" class="btn-toggle-eye" id="btnToggleAuthPass" title="Show/Hide Password">👁️</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="auth-form-meta">
+                  <label class="remember-checkbox">
+                    <input type="checkbox" id="authRememberPassword" checked />
+                    <span>Save password for future portals</span>
+                  </label>
+                </div>
+                <div class="auth-gate-actions">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnSubmitAuthCredentials">
+                    🚀 Create Account & Proceed Application
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSignInInstead">
+                    🔑 Sign In With This Password
+                  </button>
+                </div>
+              </div>
+
+              <!-- Verification / OTP Section (Shown when OTP_REQUIRED or manual verification) -->
+              <div class="auth-gate-verify hidden" id="authGateVerifySection">
+                <div class="auth-gate-actions">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnResumeAuth">
+                    ✅ I've Completed Sign-In / Verified Code - Continue
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -563,6 +598,19 @@
               <div class="form-group">
                 <label for="preferredRoles">Preferred Roles (Comma-separated)</label>
                 <input type="text" id="preferredRoles" placeholder="Software Engineer, Frontend Developer, Full Stack Developer">
+              </div>
+            </div>
+
+            <h3 class="section-heading" style="margin-top: 1.5rem;">Job Portal & Workday Credentials</h3>
+            <p class="section-subtext">The email and default password used by your agent when creating accounts or signing into company portals (Workday, Taleo, etc.).</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="credAccountEmail">Portal Login Email</label>
+                <input type="email" id="credAccountEmail" value="shivamvishwa844@gmail.com">
+              </div>
+              <div class="form-group">
+                <label for="credDefaultPassword">Default Portal Password <span class="text-muted">(Optional - agent will prompt if left blank)</span></label>
+                <input type="password" id="credDefaultPassword" placeholder="e.g. Shivam#2028">
               </div>
             </div>
 

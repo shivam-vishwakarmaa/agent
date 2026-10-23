@@ -33,6 +33,13 @@ class SessionStore {
         const raw = fs.readFileSync(PROFILE_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (!parsed.resumes) parsed.resumes = [];
+        if (!parsed.credentials) {
+          parsed.credentials = {
+            accountEmail: parsed.personal?.email || 'shivamvishwa844@gmail.com',
+            defaultPassword: '',
+            savePasswords: true
+          };
+        }
         if (parsed.resume && parsed.resume.fileName && !parsed.resumes.some(r => r.fileName === parsed.resume.fileName)) {
           parsed.resumes.push({
             id: `res_${Date.now()}`,
@@ -66,6 +73,11 @@ class SessionStore {
         linkedinUrl: '',
         githubUrl: '',
         portfolioUrl: ''
+      },
+      credentials: {
+        accountEmail: 'shivamvishwa844@gmail.com',
+        defaultPassword: '',
+        savePasswords: true
       },
       preferences: {
         preferredRoles: ['Software Engineer', 'Frontend Developer', 'Full Stack Developer'],
@@ -114,6 +126,26 @@ class SessionStore {
 
   getProfile() {
     return this.profile;
+  }
+
+  getCredentials() {
+    return this.profile.credentials || {
+      accountEmail: this.profile.personal?.email || 'shivamvishwa844@gmail.com',
+      defaultPassword: '',
+      savePasswords: true
+    };
+  }
+
+  saveCredentials({ accountEmail, defaultPassword, savePasswords }) {
+    if (!this.profile.credentials) this.profile.credentials = {};
+    if (accountEmail !== undefined) this.profile.credentials.accountEmail = accountEmail;
+    if (defaultPassword !== undefined) this.profile.credentials.defaultPassword = defaultPassword;
+    if (savePasswords !== undefined) this.profile.credentials.savePasswords = Boolean(savePasswords);
+    if (accountEmail && this.profile.personal) {
+      this.profile.personal.email = accountEmail;
+    }
+    this.saveProfile(this.profile);
+    return this.profile.credentials;
   }
 
   /**

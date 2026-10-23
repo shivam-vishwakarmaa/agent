@@ -1,7 +1,7 @@
 {
   "personal": {
     "fullName": "Shivam Vishwakarma",
-    "email": "svshivamshailendra@gmail.com",
+    "email": "shivamvishwa844@gmail.com",
     "phone": "+91 84463 24793",
     "dateOfBirth": "2005-11-08",
     "gender": "Male",
@@ -9,6 +9,11 @@
     "linkedinUrl": "https://linkedin.com/in/shivamvishwakarma8",
     "githubUrl": "https://github.com/shivam-vishwakarmaa",
     "portfolioUrl": "https://shivam-pay.vercel.app"
+  },
+  "credentials": {
+    "accountEmail": "shivamvishwa844@gmail.com",
+    "defaultPassword": "",
+    "savePasswords": true
   },
   "preferences": {
     "experienceLevel": "Fresher (0-1 YOE)",
